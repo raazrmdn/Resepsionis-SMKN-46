@@ -146,20 +146,20 @@ export default function VisitInput() {
             <Search size={20} />
           </div>
           <div>
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Link Untuk QR Code Kunjungan</p>
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Link Untuk QR Code Kunjungan (Gunakan Untuk Guest)</p>
             <p className="font-mono text-xs font-bold text-vibrant-blue break-all">
-              {window.location.origin}/app/visit-input
+              {window.location.origin}/public/visit
             </p>
           </div>
         </div>
         <button 
           onClick={() => {
-            navigator.clipboard.writeText(`${window.location.origin}/app/visit-input`);
-            setNotification({ type: 'success', message: 'Link berhasil disalin ke clipboard! 📋' });
+            navigator.clipboard.writeText(`${window.location.origin}/public/visit`);
+            setNotification({ type: 'success', message: 'Link public berhasil disalin! 📋' });
           }}
           className="px-6 py-3 bg-playful-100 hover:bg-vibrant-blue hover:text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 text-vibrant-blue"
         >
-          Salin Link
+          Salin Link Public
         </button>
       </motion.div>
 

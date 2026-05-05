@@ -175,20 +175,20 @@ export default function Appointments() {
             <Search size={20} />
           </div>
           <div className="text-left">
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Link Untuk QR Code Janji Temu</p>
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Link Untuk QR Code Janji Temu (Gunakan Untuk Guest)</p>
             <p className="font-mono text-xs font-bold text-vibrant-purple break-all text-left">
-              {window.location.origin}/app/appointments
+              {window.location.origin}/public/appointment
             </p>
           </div>
         </div>
         <button 
           onClick={() => {
-            navigator.clipboard.writeText(`${window.location.origin}/app/appointments`);
-            setNotification({ type: 'success', message: 'Link berhasil disalin ke clipboard! 📋' });
+            navigator.clipboard.writeText(`${window.location.origin}/public/appointment`);
+            setNotification({ type: 'success', message: 'Link public berhasil disalin! 📋' });
           }}
           className="px-6 py-3 bg-playful-100 hover:bg-vibrant-purple hover:text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 text-vibrant-purple"
         >
-          Salin Link
+          Salin Link Public
         </button>
       </motion.div>
       </div>

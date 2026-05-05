@@ -256,7 +256,8 @@ export default function LandingPage() {
                 icon: <Calendar className="text-vibrant-purple" size={32} />,
                 bg: "bg-vibrant-purple/5",
                 border: "border-vibrant-purple/10",
-                number: "01"
+                number: "01",
+                link: "/public/appointment"
               },
               {
                 title: "Input Kunjungan",
@@ -264,7 +265,8 @@ export default function LandingPage() {
                 icon: <Users className="text-vibrant-blue" size={32} />,
                 bg: "bg-vibrant-blue/5",
                 border: "border-vibrant-blue/10",
-                number: "02"
+                number: "02",
+                link: "/public/visit"
               },
               {
                 title: "Titipan Barang / Surat",
@@ -272,7 +274,8 @@ export default function LandingPage() {
                 icon: <Package className="text-vibrant-pink" size={32} />,
                 bg: "bg-vibrant-pink/5",
                 border: "border-vibrant-pink/10",
-                number: "03"
+                number: "03",
+                link: "/login"
               },
               {
                 title: "Dispensasi Siswa",
@@ -280,7 +283,8 @@ export default function LandingPage() {
                 icon: <LogOut className="text-vibrant-yellow" size={32} />,
                 bg: "bg-vibrant-yellow/5",
                 border: "border-vibrant-yellow/10",
-                number: "04"
+                number: "04",
+                link: "/login"
               }
             ].map((item, idx) => (
               <motion.div
@@ -289,25 +293,32 @@ export default function LandingPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: idx * 0.1 }}
-                className={cn(
-                  "p-10 rounded-[3rem] border-4 flex flex-col items-start gap-8 group hover:shadow-2xl transition-all duration-500 bg-white",
-                  item.border
-                )}
               >
-                <div className="flex justify-between w-full items-start">
-                  <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center bg-white shadow-xl group-hover:scale-110 group-hover:rotate-6 transition-transform duration-500", item.bg)}>
-                    {item.icon}
+                <Link
+                  to={item.link}
+                  className={cn(
+                    "p-10 rounded-[3rem] border-4 flex flex-col h-full items-start gap-8 group hover:shadow-2xl transition-all duration-500 bg-white block",
+                    item.border
+                  )}
+                >
+                  <div className="flex justify-between w-full items-start">
+                    <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center bg-white shadow-xl group-hover:scale-110 group-hover:rotate-6 transition-transform duration-500", item.bg)}>
+                      {item.icon}
+                    </div>
+                    <span className="text-4xl font-black text-gray-100 group-hover:text-gray-200 transition-colors uppercase italic">{item.number}</span>
                   </div>
-                  <span className="text-4xl font-black text-gray-100 group-hover:text-gray-200 transition-colors uppercase italic">{item.number}</span>
-                </div>
-                <div>
-                  <h3 className="text-2xl font-black text-gray-900 mb-4 tracking-tight uppercase group-hover:text-vibrant-purple transition-colors">{item.title}</h3>
-                  <p className="text-gray-500 font-bold leading-relaxed">{item.desc}</p>
-                </div>
-                <div className="mt-4 pt-6 border-t border-gray-50 w-full flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-vibrant-purple"></div>
-                  <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Ready to assist</span>
-                </div>
+                  <div>
+                    <h3 className="text-2xl font-black text-gray-900 mb-4 tracking-tight uppercase group-hover:text-vibrant-purple transition-colors">{item.title}</h3>
+                    <p className="text-gray-500 font-bold leading-relaxed">{item.desc}</p>
+                  </div>
+                  <div className="mt-auto pt-6 border-t border-gray-50 w-full flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                       <div className="w-1.5 h-1.5 rounded-full bg-vibrant-purple"></div>
+                       <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Ready to assist</span>
+                    </div>
+                    <ArrowRight size={16} className="text-gray-300 group-hover:text-vibrant-purple group-hover:translate-x-1 transition-all" />
+                  </div>
+                </Link>
               </motion.div>
             ))}
           </div>
@@ -396,7 +407,8 @@ export default function LandingPage() {
               <ul className="space-y-4">
                 {[
                   { label: 'Beranda', path: '/' },
-                  { label: 'Ajukan Janji Temu', path: '/public/appointment' },
+                  { label: 'Janji Temu Mandiri', path: '/public/appointment' },
+                  { label: 'Kunjungan Resmi Mandiri', path: '/public/visit' },
                   { label: 'Buku Tamu Digital', path: '/login' },
                   { label: 'Jadwal Guru', path: '/login' },
                   { label: 'Logistik & Paket', path: '/login' },

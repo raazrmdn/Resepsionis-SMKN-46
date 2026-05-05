@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Navigate, Link, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { LogIn, Mail, Lock, AlertCircle, CheckCircle2, ArrowLeft } from 'lucide-react';
+import { LogIn, Mail, Lock, AlertCircle, CheckCircle2, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../AuthContext';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -113,13 +114,21 @@ export default function LoginPage() {
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-vibrant-blue/40" size={20} />
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-12 pr-4 py-4 bg-white border-2 border-gray-100 rounded-2xl text-gray-900 focus:border-vibrant-blue outline-none transition-all placeholder:text-gray-300 font-bold"
+                    className="w-full pl-12 pr-12 py-4 bg-white border-2 border-gray-100 rounded-2xl text-gray-900 focus:border-vibrant-blue outline-none transition-all placeholder:text-gray-300 font-bold"
                     placeholder="••••••••"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-vibrant-blue/40 hover:text-vibrant-blue transition-colors"
+                    title={showPassword ? "Sembunyikan" : "Lihat"}
+                  >
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
                 </div>
               </div>
 

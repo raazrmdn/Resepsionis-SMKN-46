@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link, Navigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Mail, Lock, User, LogIn, AlertCircle, Sparkles, Rocket, ArrowLeft } from 'lucide-react';
+import { Mail, Lock, User, LogIn, AlertCircle, Sparkles, Rocket, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { supabase, type Role } from '../lib/supabase';
 import { useAuth } from '../AuthContext';
 import { cn } from '../lib/utils';
@@ -9,6 +9,7 @@ import { cn } from '../lib/utils';
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState('');
   const [role, setRole] = useState<Role>('guest');
   const [loading, setLoading] = useState(false);
@@ -158,13 +159,21 @@ export default function RegisterPage() {
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-vibrant-purple/40" size={20} />
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-12 pr-4 py-4 bg-white border-2 border-gray-100 rounded-2xl text-gray-900 focus:border-vibrant-purple outline-none transition-all placeholder:text-gray-300 font-bold"
+                    className="w-full pl-12 pr-12 py-4 bg-white border-2 border-gray-100 rounded-2xl text-gray-900 focus:border-vibrant-purple outline-none transition-all placeholder:text-gray-300 font-bold"
                     placeholder="••••••••"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-vibrant-purple/40 hover:text-vibrant-purple transition-colors"
+                    title={showPassword ? "Sembunyikan" : "Lihat"}
+                  >
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
                 </div>
               </div>
 

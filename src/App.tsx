@@ -19,6 +19,7 @@ import UserManagement from './pages/UserManagement';
 import AppointmentList from './pages/AppointmentList';
 import Reports from './pages/Reports';
 import VisitInput from './pages/VisitInput';
+import PublicVisit from './pages/PublicVisit';
 import StudentDispensation from './pages/StudentDispensation';
 
 export default function App() {
@@ -30,6 +31,7 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/public/appointment" element={<PublicAppointment />} />
+          <Route path="/public/visit" element={<PublicVisit />} />
           
           <Route path="/app" element={<AppLayout />}>
             <Route index element={<Dashboard />} />

@@ -1,0 +1,56 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  
+  --color-playful-50: #FFFDF5;
+  --color-playful-100: #FFF9E6;
+  --color-playful-200: #F7E8AC;
+  --color-vibrant-pink: #FF4D94;
+  --color-vibrant-purple: #9D4EDD;
+  --color-vibrant-blue: #4CC9F0;
+  --color-vibrant-yellow: #FFD60A;
+  --color-vibrant-green: #38B000;
+  
+  --color-primary: var(--color-vibrant-purple);
+  --color-secondary: var(--color-vibrant-pink);
+  --color-accent: var(--color-vibrant-yellow);
+}
+
+@layer base {
+  body {
+    @apply font-sans bg-playful-50 text-gray-800 antialiased;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-gradient-to-r from-vibrant-purple to-vibrant-pink text-white px-8 py-3 rounded-2xl font-black hover:shadow-[0_10px_20px_rgba(157,78,221,0.3)] transition-all transform hover:-translate-y-1 active:scale-95 uppercase tracking-wider;
+  }
+  
+  .btn-gold {
+    @apply bg-vibrant-yellow text-gray-900 px-8 py-3 rounded-2xl font-black hover:shadow-[0_10px_20px_rgba(255,214,10,0.3)] transition-all transform hover:-translate-y-1 active:scale-95 uppercase tracking-wider;
+  }
+  
+  .card-glass {
+    @apply bg-white/70 backdrop-blur-xl border-2 border-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.05)];
+  }
+  
+  .sidebar-link {
+    @apply flex items-center gap-4 px-5 py-4 rounded-2xl transition-all text-gray-500 font-bold border-2 border-slate-100/50 hover:text-vibrant-purple hover:bg-vibrant-purple/5 hover:border-vibrant-purple/10;
+  }
+  
+  .sidebar-link-active {
+    @apply flex items-center gap-4 px-5 py-4 rounded-2xl bg-gradient-to-br from-vibrant-purple to-vibrant-blue text-white font-black shadow-[0_10px_20px_rgba(76,201,240,0.3)] border-white/20;
+  }
+
+  .mesh-gradient {
+    background-color: #FFFDF5;
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(255, 77, 148, 0.15) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(76, 201, 240, 0.15) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(255, 214, 10, 0.15) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, rgba(157, 78, 221, 0.15) 0px, transparent 50%);
+  }
+}

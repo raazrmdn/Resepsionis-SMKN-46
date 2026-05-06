@@ -18,15 +18,15 @@ export default function LandingPage() {
       <nav className="fixed top-0 w-full bg-white/60 backdrop-blur-xl z-50 border-b-2 border-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-24 items-center">
-            <div className="flex items-center gap-4">
+            <Link to="/" className="flex items-center gap-4 hover:opacity-80 transition-opacity">
               <img 
                 src="https://drive.google.com/thumbnail?id=1w1hSW0d-j-ni3t7AqEAhsSnC-FUGz4kh&sz=w500" 
                 alt="SMKN 46 Logo" 
                 className="w-16 h-16 object-contain drop-shadow-lg"
                 referrerPolicy="no-referrer"
               />
-              <span className="text-gray-900 font-black text-3xl tracking-tighter">RESEPSIONIS <span className="text-vibrant-purple">SMKN 46</span></span>
-            </div>
+              <span className="text-gray-900 font-black text-3xl tracking-tighter uppercase whitespace-nowrap">RESEPSIONIS <span className="text-vibrant-purple">SMKN 46</span></span>
+            </Link>
             <div className="hidden md:flex items-center gap-10">
               <a href="#features" className="text-gray-500 hover:text-vibrant-purple font-black transition-all text-sm uppercase tracking-widest">Features</a>
               <Link to="/login" className="text-gray-500 hover:text-vibrant-purple font-black transition-all text-sm uppercase tracking-widest">Login</Link>

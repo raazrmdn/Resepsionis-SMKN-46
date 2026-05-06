@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { Building2, UserCircle, Users, MessageSquare, Check, Sparkles, Building, Phone, Calendar as CalendarIcon, Clock, ArrowLeft, MapPin } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -84,26 +85,23 @@ export default function PublicVisit() {
           time: formData.time,
           purpose: fullPurpose,
           status: 'pending',
+          teacher_id: null,
           receptionist_id: null
         }]);
 
       if (aptError) {
-        if (aptError.message.includes('column')) {
-          console.warn('Fallback: DB columns missing. Inserting minimal data.');
-          const { error: fallbackError } = await supabase
-            .from('appointments')
-            .insert([{
-              guest_name: formData.visitor_name,
-              date: formData.date,
-              time: formData.time,
-              purpose: fullPurpose,
-              status: 'pending',
-              receptionist_id: null
-            }]);
-          if (fallbackError) throw fallbackError;
-        } else {
-          throw aptError;
-        }
+        console.error('Initial insert failed:', aptError);
+        // Fallback for potential schema mismatch
+        const { error: fallbackError } = await supabase
+          .from('appointments')
+          .insert([{
+            guest_name: formData.visitor_name,
+            date: formData.date,
+            time: formData.time,
+            purpose: fullPurpose,
+            status: 'pending'
+          }]);
+        if (fallbackError) throw fallbackError;
       }
 
       // 2. Also log to guests table (Don't throw if fails)
@@ -160,7 +158,7 @@ export default function PublicVisit() {
       {/* Public Header */}
       <nav className="bg-white border-b-4 border-playful-100 py-6 px-4 mb-10 sticky top-0 z-50 shadow-sm">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <Link to="/" className="flex items-center gap-4 hover:opacity-80 transition-opacity">
             <div className="w-10 h-10 bg-vibrant-blue rounded-xl flex items-center justify-center text-white font-black text-xl shadow-md -rotate-3">
               46
             </div>
@@ -168,7 +166,11 @@ export default function PublicVisit() {
               <h1 className="text-gray-900 font-black text-xs tracking-tighter uppercase leading-none">SMKN 46 JAKARTA</h1>
               <p className="text-vibrant-blue text-[8px] uppercase font-black tracking-widest mt-1">Layanan Kunjungan Resmi</p>
             </div>
-          </div>
+          </Link>
+          <Link to="/" className="flex items-center gap-2 text-gray-400 hover:text-vibrant-blue transition-colors group">
+            <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+            <span className="text-[10px] font-black uppercase tracking-widest">Kembali</span>
+          </Link>
         </div>
       </nav>
 

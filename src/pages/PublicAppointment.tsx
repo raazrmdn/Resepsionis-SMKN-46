@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Calendar as CalendarIcon, Clock, User, MessageSquare, Sparkles, MapPin, Phone, Mail, Search, Plus } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, User, MessageSquare, Sparkles, MapPin, Phone, Mail, Search, Plus, ArrowLeft } from 'lucide-react';
 import { supabase, type Profile } from '../lib/supabase';
 import { useAuth } from '../AuthContext';
 import { cn } from '../lib/utils';
@@ -170,7 +171,7 @@ export default function PublicAppointment() {
       {/* Public Header */}
       <nav className="bg-white border-b-4 border-playful-100 py-6 px-4 mb-10 sticky top-0 z-50 shadow-sm">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <Link to="/" className="flex items-center gap-4 hover:opacity-80 transition-opacity">
             <div className="w-10 h-10 bg-vibrant-purple rounded-xl flex items-center justify-center text-white font-black text-xl shadow-md rotate-3">
               46
             </div>
@@ -178,7 +179,11 @@ export default function PublicAppointment() {
               <h1 className="text-gray-900 font-black text-xs tracking-tighter uppercase leading-none">SMKN 46 JAKARTA</h1>
               <p className="text-vibrant-purple text-[8px] uppercase font-black tracking-widest mt-1">Layanan Tamu Mandiri</p>
             </div>
-          </div>
+          </Link>
+          <Link to="/" className="flex items-center gap-2 text-gray-400 hover:text-vibrant-purple transition-colors group">
+            <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+            <span className="text-[10px] font-black uppercase tracking-widest">Kembali</span>
+          </Link>
         </div>
       </nav>
 

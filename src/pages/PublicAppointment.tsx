@@ -152,7 +152,21 @@ export default function PublicAppointment() {
             Janji temu Anda telah berhasil didaftarkan. Silakan lapor ke petugas keamanan atau resepsionis saat tiba di SMKN 46 Jakarta.
           </p>
           <button 
-            onClick={() => window.location.reload()}
+            onClick={() => {
+              setIsSuccess(false);
+              setFormData({
+                guest_name: '',
+                organization: '',
+                phone: '',
+                target_category: '',
+                target_class: '',
+                target_name: '',
+                teacher_id: '',
+                date: '',
+                time: '',
+                purpose: ''
+              });
+            }}
             className="w-full btn-primary py-5 text-lg"
           >
             ISI FORMULIR LAGI

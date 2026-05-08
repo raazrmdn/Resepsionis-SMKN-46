@@ -113,7 +113,21 @@ export default function PublicVisit() {
             Data kunjungan resmi Anda telah berhasil masuk ke sistem SMKN 46 Jakarta. Terima kasih telah melapor.
           </p>
           <button 
-            onClick={() => window.location.reload()}
+            onClick={() => {
+              setIsSuccess(false);
+              setFormData({
+                organization: '',
+                visitor_name: '',
+                visitor_count: '1',
+                phone: '',
+                target_unit: '',    
+                target_person: '',  
+                date: new Date().toISOString().split('T')[0],
+                time: '',
+                purpose: ''
+              });
+              setTargetClass('');
+            }}
             className="w-full bg-vibrant-blue hover:bg-blue-600 text-white py-5 rounded-2xl font-black shadow-xl transition-all active:scale-95 uppercase tracking-widest text-sm"
           >
             ISI FORMULIR LAGI

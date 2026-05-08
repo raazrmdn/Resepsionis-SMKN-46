@@ -5,7 +5,7 @@ import {
   ShieldCheck, Users, Calendar, Package, ArrowRight, School, FileText, 
   Rocket, Sparkles, MapPin, Mail, Phone, Facebook, Instagram, Twitter, 
   Youtube, LogOut, Building2, UserCircle, MessageSquare, Building, Clock, 
-  Search, Plus, Check, Building as BuildingIcon 
+  Search, Plus, Check, User, Building as BuildingIcon 
 } from 'lucide-react';
 import { useAuth } from '../AuthContext';
 import { cn } from '../lib/utils';
@@ -497,87 +497,259 @@ export default function LandingPage() {
                     exit={{ opacity: 0, x: 20 }}
                     id="input-kunjungan"
                   >
+                    <div className="bg-gradient-to-br from-vibrant-blue to-blue-600 p-8 md:p-10 text-white relative">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
+                      <div className="flex items-center gap-4 relative z-10">
+                        <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center">
+                          <BuildingIcon size={28} className="text-white" />
+                        </div>
+                        <div>
+                          <h3 className="text-2xl font-black tracking-tight uppercase leading-none mb-1">Form Tamu Dinas</h3>
+                          <p className="text-white/70 font-bold text-[10px] uppercase tracking-widest leading-none">Registrasi Kunjungan Luar / Instansi</p>
+                        </div>
+                      </div>
+                    </div>
+
                     {!visitSuccess ? (
-                      <form onSubmit={handleVisitSubmit} className="space-y-8">
-                        <div className="grid md:grid-cols-2 gap-8">
-                          <div className="space-y-3">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Asal Instansi</label>
+                      <form onSubmit={handleVisitSubmit} className="p-8 md:p-12 space-y-10">
+                        <div className="grid md:grid-cols-2 gap-10">
+                          <div className="space-y-4">
+                            <label className="flex items-center gap-2 text-[10px] font-black text-gray-700 uppercase tracking-[0.2em]">
+                              <BuildingIcon size={14} className="text-vibrant-blue" />
+                              Asal Instansi / Dinas
+                            </label>
                             <input 
                               type="text" required
-                              className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-blue/10 rounded-[2rem] outline-none transition-all font-bold text-gray-900 text-sm"
-                              placeholder="Nama Sekolah/Dinas"
+                              className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-blue/10 rounded-[2rem] outline-none transition-all font-bold text-gray-900 placeholder:text-gray-300 text-sm"
+                              placeholder="Nama Dinas atau Instansi"
                               value={visitData.organization}
                               onChange={(e) => setVisitData({...visitData, organization: e.target.value})}
                             />
                           </div>
-                          <div className="space-y-3">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Nama Perwakilan</label>
+                          <div className="space-y-4">
+                            <label className="flex items-center gap-2 text-[10px] font-black text-gray-700 uppercase tracking-[0.2em]">
+                              <UserCircle size={14} className="text-vibrant-blue" />
+                              Nama Perwakilan
+                            </label>
                             <input 
                               type="text" required
-                              className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-blue/10 rounded-[2rem] outline-none transition-all font-bold text-gray-900 text-sm"
+                              className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-blue/10 rounded-[2rem] outline-none transition-all font-bold text-gray-900 placeholder:text-gray-300 text-sm"
                               placeholder="Nama Lengkap"
                               value={visitData.visitor_name}
                               onChange={(e) => setVisitData({...visitData, visitor_name: e.target.value})}
                             />
                           </div>
                         </div>
-                        <div className="grid md:grid-cols-2 gap-8">
-                          <div className="space-y-3">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Bidang yang dituju</label>
-                            <select 
-                              required
-                              className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-blue/10 rounded-[2rem] outline-none transition-all font-black text-sm appearance-none"
-                              value={visitData.target_unit}
-                              onChange={(e) => setVisitData({...visitData, target_unit: e.target.value, target_person: ''})}
-                            >
-                              <option value="">-- PILIH UNIT --</option>
-                              <option value="Kepala Sekolah">Kepala Sekolah</option>
-                              <option value="Wakil Kepala Sekolah">Wakil Kepala Sekolah</option>
-                              <option value="Tata Usaha">Tata Usaha</option>
-                              <option value="Wali Kelas">Wali Kelas</option>
-                              <option value="Peserta Didik">Peserta Didik</option>
-                            </select>
+
+                        <div className="grid md:grid-cols-2 gap-10">
+                          <div className="space-y-4">
+                            <label className="flex items-center gap-2 text-[10px] font-black text-gray-700 uppercase tracking-[0.2em]">
+                              <Users size={14} className="text-vibrant-blue" />
+                              Jumlah Anggota
+                            </label>
+                            <input 
+                              type="number" required min="1"
+                              className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-blue/10 rounded-[2rem] outline-none transition-all font-bold text-gray-900 text-sm"
+                              value={visitData.visitor_count}
+                              onChange={(e) => setVisitData({...visitData, visitor_count: e.target.value})}
+                            />
                           </div>
-                          <div className="space-y-3">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">WhatsApp</label>
+                          <div className="space-y-4">
+                            <label className="flex items-center gap-2 text-[10px] font-black text-gray-700 uppercase tracking-[0.2em]">
+                              <Phone size={14} className="text-vibrant-blue" />
+                              Nomor WhatsApp
+                            </label>
                             <input 
                               type="tel" required
-                              className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-blue/10 rounded-[2rem] outline-none transition-all font-bold text-gray-900 text-sm"
+                              className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-blue/10 rounded-[2rem] outline-none transition-all font-bold text-gray-900 placeholder:text-gray-300 text-sm"
                               placeholder="08xxxxxxxx"
                               value={visitData.phone}
                               onChange={(e) => setVisitData({...visitData, phone: e.target.value})}
                             />
                           </div>
                         </div>
-                        <div className="space-y-3">
-                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Detail Keperluan</label>
+
+                        <div className="grid md:grid-cols-2 gap-10">
+                          <div className="space-y-4">
+                            <label className="flex items-center gap-2 text-[10px] font-black text-gray-700 uppercase tracking-[0.2em]">
+                              <Sparkles size={14} className="text-vibrant-blue" />
+                              Unit yang Dituju
+                            </label>
+                            <select 
+                              required
+                              className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-blue/10 rounded-[2rem] outline-none transition-all font-black text-sm appearance-none"
+                              value={visitData.target_unit}
+                              onChange={(e) => {
+                                setVisitData({...visitData, target_unit: e.target.value, target_person: ''});
+                                setVisitTargetClass('');
+                              }}
+                            >
+                              <option value="">-- PILIH UNIT --</option>
+                              <option value="Kepala Sekolah">Kepala Sekolah</option>
+                              <option value="Wak. Humas">Wak. Humas</option>
+                              <option value="Wak. Kurikulum">Wak. Kurikulum</option>
+                              <option value="Wak. Kesiswaan">Wak. Kesiswaan</option>
+                              <option value="Wak. Sarana Prasarana">Wak. Sarana Prasarana</option>
+                              <option value="Tata Usaha">Tata Usaha</option>
+                              <option value="Wali Kelas">Wali Kelas</option>
+                              <option value="Wali Murid">Wali Murid</option>
+                              <option value="OSIS/MPK">OSIS/MPK</option>
+                              <option value="Peserta Didik">Peserta Didik</option>
+                              <option value="Staff/Karyawan">Staff/Karyawan</option>
+                            </select>
+                          </div>
+                          
+                          <div className="space-y-6">
+                            {visitData.target_unit === 'Peserta Didik' ? (
+                              <>
+                                <div className="space-y-4">
+                                  <label className="flex items-center gap-2 text-[10px] font-black text-gray-700 uppercase tracking-[0.2em]">
+                                    <Users size={14} className="text-vibrant-blue" />
+                                    Kelas Siswa
+                                  </label>
+                                  <select 
+                                    required
+                                    className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-blue/10 rounded-[2rem] outline-none transition-all font-black appearance-none text-sm"
+                                    value={visitTargetClass}
+                                    onChange={(e) => setVisitTargetClass(e.target.value)}
+                                  >
+                                    <option value="">-- PILIH KELAS --</option>
+                                    {CLASS_LIST.map((cls) => (
+                                      <option key={cls} value={cls}>{cls}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div className="space-y-4">
+                                  <label className="flex items-center gap-2 text-[10px] font-black text-gray-700 uppercase tracking-[0.2em]">
+                                    <UserCircle size={14} className="text-vibrant-blue" />
+                                    Nama Lengkap Siswa
+                                  </label>
+                                  <input 
+                                    type="text" required
+                                    className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-blue/10 rounded-[2rem] outline-none transition-all font-bold text-gray-900 placeholder:text-gray-300 text-sm"
+                                    placeholder="Ketik Nama Siswa"
+                                    value={visitData.target_person}
+                                    onChange={(e) => setVisitData({...visitData, target_person: e.target.value})}
+                                  />
+                                </div>
+                              </>
+                            ) : (
+                              <div className="space-y-4">
+                                <label className="flex items-center gap-2 text-[10px] font-black text-gray-700 uppercase tracking-[0.2em]">
+                                  <UserCircle size={14} className="text-vibrant-blue" />
+                                  {visitData.target_unit === 'Wali Murid' || visitData.target_unit === 'Wali Kelas' 
+                                    ? 'Pilih Wali Kelas' 
+                                    : 'Menemui (Opsional)'}
+                                </label>
+                                {visitData.target_unit === 'Wali Murid' || visitData.target_unit === 'Wali Kelas' ? (
+                                  <select 
+                                    required
+                                    className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-blue/10 rounded-[2rem] outline-none transition-all font-bold appearance-none text-sm"
+                                    value={visitData.target_person}
+                                    onChange={(e) => setVisitData({...visitData, target_person: e.target.value})}
+                                  >
+                                    <option value="">-- PILIH WALI KELAS --</option>
+                                    {WALI_KELAS_LIST.map((wali) => (
+                                      <option key={wali} value={wali}>{wali}</option>
+                                    ))}
+                                  </select>
+                                ) : (
+                                  <input 
+                                    type="text"
+                                    className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-blue/10 rounded-[2rem] outline-none transition-all font-bold text-gray-900 placeholder:text-gray-300 text-sm"
+                                    placeholder="Nama Pejabat/Guru yang dituju"
+                                    value={visitData.target_person}
+                                    onChange={(e) => setVisitData({...visitData, target_person: e.target.value})}
+                                  />
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="grid md:grid-cols-2 gap-10">
+                          <div className="space-y-4">
+                            <label className="flex items-center gap-2 text-[10px] font-black text-gray-700 uppercase tracking-[0.2em]">
+                              <Calendar size={14} className="text-vibrant-blue" />
+                              Tanggal Kunjungan
+                            </label>
+                            <input 
+                              type="date" required
+                              className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-blue/10 rounded-[2rem] outline-none transition-all font-bold text-gray-900"
+                              value={visitData.date}
+                              onChange={(e) => setVisitData({...visitData, date: e.target.value})}
+                            />
+                          </div>
+                          <div className="space-y-4">
+                            <label className="flex items-center gap-2 text-[10px] font-black text-gray-700 uppercase tracking-[0.2em]">
+                              <Clock size={14} className="text-vibrant-blue" />
+                              Waktu Kedatangan
+                            </label>
+                            <input 
+                              type="time" required
+                              className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-blue/10 rounded-[2rem] outline-none transition-all font-bold text-gray-900"
+                              value={visitData.time}
+                              onChange={(e) => setVisitData({...visitData, time: e.target.value})}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-4">
+                          <label className="flex items-center gap-2 text-[10px] font-black text-gray-700 uppercase tracking-[0.2em]">
+                            <MessageSquare size={14} className="text-vibrant-blue" />
+                            Detail Keperloan
+                          </label>
                           <textarea 
-                            required rows={3}
+                            required rows={4}
                             className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-blue/10 rounded-[2rem] outline-none transition-all font-bold text-gray-900 text-sm"
-                            placeholder="Apa maksud kunjungan Anda?"
+                            placeholder="Tuliskan maksud kunjungan Anda secara mendalam..."
                             value={visitData.purpose}
                             onChange={(e) => setVisitData({...visitData, purpose: e.target.value})}
                           ></textarea>
                         </div>
+
                         <button 
                           type="submit" disabled={loading}
-                          className="w-full py-6 bg-vibrant-blue text-white rounded-[2rem] font-black uppercase tracking-[0.2em] shadow-xl hover:shadow-vibrant-blue/20 transition-all flex items-center justify-center gap-4"
+                          className="w-full py-6 md:py-8 bg-vibrant-blue text-white rounded-[2.5rem] font-black text-xl uppercase tracking-widest shadow-2xl shadow-blue-200 hover:bg-blue-600 transition-all active:scale-95 flex items-center justify-center gap-4 group"
                         >
-                          {loading ? <div className="w-6 h-6 border-4 border-white/30 border-t-white rounded-full animate-spin"></div> : "Kirim Form Kunjungan"}
+                          {loading ? (
+                             <div className="w-8 h-8 border-4 border-white/30 border-t-white rounded-full animate-spin"></div>
+                          ) : (
+                            <>
+                              <BuildingIcon size={24} className="group-hover:rotate-12 transition-transform" />
+                              <span>Log Kunjungan Resmi</span>
+                            </>
+                          )}
                         </button>
                       </form>
                     ) : (
-                      <div className="text-center py-10 space-y-6">
-                        <div className="w-20 h-20 bg-vibrant-blue/10 text-vibrant-blue rounded-[2rem] flex items-center justify-center mx-auto">
-                          <Check size={40} />
+                      <div className="text-center py-20 p-8 space-y-10">
+                        <div className="w-24 h-24 bg-vibrant-blue/10 text-vibrant-blue rounded-[2.5rem] flex items-center justify-center mx-auto shadow-inner">
+                          <Check size={48} strokeWidth={3} />
                         </div>
-                        <h3 className="text-3xl font-black text-gray-900 uppercase">Input Berhasil!</h3>
-                        <p className="text-gray-500 font-bold max-w-sm mx-auto">Terima kasih, data kunjungan resmi Anda sudah tercatat di meja resepsionis.</p>
+                        <div className="space-y-4">
+                          <h3 className="text-4xl font-black text-gray-900 uppercase tracking-tight">Kunjungan Tercatat!</h3>
+                          <p className="text-gray-500 font-bold max-w-sm mx-auto uppercase tracking-wide text-sm">Terima kasih atas kedatangannya, data kunjungan resmi Anda sudah masuk ke sistem kami.</p>
+                        </div>
                         <button 
-                          onClick={() => setVisitSuccess(false)}
-                          className="px-10 py-4 bg-gray-100 text-gray-500 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-playful-100 transition-all"
+                          onClick={() => {
+                            setVisitSuccess(false);
+                            setVisitData({
+                              organization: '',
+                              visitor_name: '',
+                              visitor_count: '1',
+                              phone: '',
+                              target_unit: '',    
+                              target_person: '',  
+                              date: new Date().toISOString().split('T')[0],
+                              time: '',
+                              purpose: ''
+                            });
+                            setVisitTargetClass('');
+                          }}
+                          className="px-12 py-5 bg-gray-100 text-gray-900 rounded-[2rem] font-black uppercase tracking-[0.2em] text-xs hover:bg-playful-100 transition-all shadow-md active:scale-95"
                         >
-                          ISI FORMULIR LAGI
+                          KEMBALI KE FORMULIR
                         </button>
                       </div>
                     )}
@@ -590,94 +762,228 @@ export default function LandingPage() {
                     exit={{ opacity: 0, x: -20 }}
                     id="input-janji-temu"
                   >
+                    <div className="bg-gradient-to-br from-vibrant-purple to-vibrant-pink p-8 md:p-10 text-white relative">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
+                      <div className="flex items-center gap-4 relative z-10">
+                        <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20">
+                          <Calendar size={28} className="text-white" />
+                        </div>
+                        <div>
+                          <h3 className="text-2xl font-black tracking-tight uppercase leading-none mb-1">Data Kunjungan</h3>
+                          <p className="text-white/70 font-bold text-[10px] uppercase tracking-widest leading-none">Formulir pendaftaran tamu & janji temu</p>
+                        </div>
+                      </div>
+                    </div>
+
                     {!appointmentSuccess ? (
-                      <form onSubmit={handleAppointmentSubmit} className="space-y-8">
-                        <div className="grid md:grid-cols-2 gap-8">
-                          <div className="space-y-3">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Nama Lengkap</label>
+                      <form onSubmit={handleAppointmentSubmit} className="p-8 md:p-12 space-y-10">
+                        <div className="grid md:grid-cols-2 gap-10">
+                          <div className="space-y-4">
+                            <label className="flex items-center gap-2 text-[10px] font-black text-gray-700 uppercase tracking-[0.2em]">
+                              <UserCircle size={14} className="text-vibrant-purple" />
+                              Nama Tamu
+                            </label>
                             <input 
                               type="text" required
-                              className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-purple/10 rounded-[2rem] outline-none transition-all font-bold text-gray-900 text-sm"
-                              placeholder="Nama Anda"
+                              className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-purple/10 rounded-[2rem] outline-none transition-all font-bold text-gray-900 placeholder:text-gray-300 text-sm"
+                              placeholder="Nama Lengkap Anda"
                               value={appointmentData.guest_name}
                               onChange={(e) => setAppointmentData({...appointmentData, guest_name: e.target.value})}
                             />
                           </div>
-                          <div className="space-y-3">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Pilih Guru/Staf</label>
-                            <select 
-                              required
-                              className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-purple/10 rounded-[2rem] outline-none transition-all font-black text-sm appearance-none"
-                              value={appointmentData.teacher_id}
-                              onChange={(e) => setAppointmentData({...appointmentData, teacher_id: e.target.value})}
-                            >
-                              <option value="">-- PILIH TUJUAN --</option>
-                              {appointmentPersonnel.map(p => (
-                                <option key={p.id} value={p.id}>{p.full_name} ({p.role})</option>
-                              ))}
-                              <option value="manual">-- LAINNYA / MANUAL --</option>
-                            </select>
+                          <div className="space-y-4">
+                            <label className="flex items-center gap-2 text-[10px] font-black text-gray-700 uppercase tracking-[0.2em]">
+                              <BuildingIcon size={14} className="text-vibrant-pink" />
+                              Organisasi / Sekolah
+                            </label>
+                            <input 
+                              type="text"
+                              className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-purple/10 rounded-[2rem] outline-none transition-all font-bold text-gray-900 placeholder:text-gray-300 text-sm"
+                              placeholder="Contoh: Pribadi, PT. Sejahtera"
+                              value={appointmentData.organization}
+                              onChange={(e) => setAppointmentData({...appointmentData, organization: e.target.value})}
+                            />
                           </div>
                         </div>
-                        {(appointmentData.teacher_id === 'manual') && (
-                          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Ketik Nama Tujuan</label>
-                             <input 
+
+                        <div className="grid md:grid-cols-2 gap-10">
+                          <div className="space-y-4">
+                            <label className="flex items-center gap-2 text-[10px] font-black text-gray-700 uppercase tracking-[0.2em]">
+                              <Phone size={14} className="text-vibrant-purple" />
+                              Nomor Telepon
+                            </label>
+                            <input 
+                              type="tel"
+                              className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-purple/10 rounded-[2rem] outline-none transition-all font-bold text-gray-900 placeholder:text-gray-300 text-sm"
+                              placeholder="0812xxxx"
+                              value={appointmentData.phone}
+                              onChange={(e) => setAppointmentData({...appointmentData, phone: e.target.value})}
+                            />
+                          </div>
+                          <div className="space-y-4">
+                            <label className="flex items-center gap-2 text-[10px] font-black text-gray-700 uppercase tracking-[0.2em]">
+                              <Sparkles size={14} className="text-vibrant-blue" />
+                              Target yang Dituju
+                            </label>
+                            <div className="grid grid-cols-2 gap-3">
+                               <select 
+                                required
+                                className="w-full px-4 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-purple/10 rounded-[2rem] outline-none transition-all font-black appearance-none text-[10px]"
+                                value={appointmentData.target_category}
+                                onChange={(e) => setAppointmentData({
+                                  ...appointmentData, 
+                                  target_category: e.target.value,
+                                  target_class: '',
+                                  teacher_id: '',
+                                  target_name: ''
+                                })}
+                              >
+                                <option value="">-- KATEGORI --</option>
+                                <option value="Guru">GURU</option>
+                                <option value="Staff">STAFF</option>
+                                <option value="Siswa">SISWA</option>
+                                <option value="Lainnya">LAINNYA</option>
+                              </select>
+
+                              {appointmentData.target_category === 'Siswa' ? (
+                                <select 
+                                  required
+                                  className="w-full px-4 py-5 bg-playful-50 border-4 border-vibrant-purple/10 rounded-[2rem] outline-none transition-all font-black appearance-none text-[10px]"
+                                  value={appointmentData.target_class}
+                                  onChange={(e) => setAppointmentData({...appointmentData, target_class: e.target.value})}
+                                >
+                                  <option value="">-- KELAS --</option>
+                                  {APPOINTMENT_CLASSES.map(c => (
+                                    <option key={c} value={c}>{c}</option>
+                                  ))}
+                                </select>
+                              ) : appointmentData.target_category === 'Guru' ? (
+                                <select 
+                                  className="w-full px-4 py-5 bg-playful-50 border-4 border-vibrant-purple/10 rounded-[2rem] outline-none transition-all font-black appearance-none text-[10px]"
+                                  value={appointmentData.teacher_id}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    const selected = appointmentPersonnel.find(p => p.id === val);
+                                    if (val === 'manual') {
+                                      setAppointmentData({...appointmentData, teacher_id: 'manual', target_name: ''});
+                                    } else if (selected) {
+                                      setAppointmentData({...appointmentData, teacher_id: val, target_name: selected.full_name});
+                                    } else {
+                                      setAppointmentData({...appointmentData, teacher_id: '', target_name: ''});
+                                    }
+                                  }}
+                                >
+                                  <option value="">-- PILIH GURU --</option>
+                                  {appointmentPersonnel.filter(p => p.role === 'teacher').map(p => (
+                                    <option key={p.id} value={p.id}>{p.full_name}</option>
+                                  ))}
+                                  <option value="manual">-- MANUAL --</option>
+                                </select>
+                              ) : (
+                                <div className="w-full h-full bg-playful-100/50 rounded-[2.5rem] border-2 border-dashed border-playful-200" />
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Manual Name Input for non-registered or manual selection */}
+                        {(appointmentData.target_category === 'Siswa' || appointmentData.target_category === 'Staff' || appointmentData.target_category === 'Lainnya' || appointmentData.teacher_id === 'manual') && (
+                          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+                            <label className="flex items-center gap-2 text-[10px] font-black text-gray-700 uppercase tracking-[0.2em]">
+                              <User size={14} className="text-vibrant-purple" />
+                              Ketik Nama Personil/Siswa
+                            </label>
+                            <input 
                               type="text" required
-                              className="w-full px-8 py-5 bg-playful-50 border-4 border-vibrant-purple/20 rounded-[2rem] outline-none transition-all font-bold text-gray-900 text-sm"
-                              placeholder="Ketik nama personil yang ingin ditemui"
+                              className="w-full px-8 py-5 bg-playful-50 border-4 border-vibrant-purple/20 rounded-[2rem] outline-none transition-all font-bold text-gray-900 placeholder:text-gray-300 text-sm"
+                              placeholder={appointmentData.target_category === 'Siswa' ? "Nama Lengkap Siswa..." : "Nama Lengkap Orang yang Dituju..."}
                               value={appointmentData.target_name}
                               onChange={(e) => setAppointmentData({...appointmentData, target_name: e.target.value})}
                             />
                           </motion.div>
                         )}
-                        <div className="grid md:grid-cols-2 gap-8">
-                          <div className="space-y-3">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Tanggal</label>
+
+                        <div className="grid md:grid-cols-2 gap-10">
+                          <div className="space-y-4">
+                            <label className="flex items-center gap-2 text-[10px] font-black text-gray-700 uppercase tracking-[0.2em]">
+                              <Calendar size={14} className="text-vibrant-purple" />
+                              Rencana Tanggal
+                            </label>
                             <input 
                               type="date" required
-                              className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-purple/10 rounded-[2rem] outline-none transition-all font-bold text-gray-900 text-sm"
+                              className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-purple/10 rounded-[2rem] outline-none transition-all font-bold text-gray-900"
                               value={appointmentData.date}
                               onChange={(e) => setAppointmentData({...appointmentData, date: e.target.value})}
                             />
                           </div>
-                          <div className="space-y-3">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Waktu</label>
+                          <div className="space-y-4">
+                            <label className="flex items-center gap-2 text-[10px] font-black text-gray-700 uppercase tracking-[0.2em]">
+                              <Clock size={14} className="text-vibrant-pink" />
+                              Prakiraan Waktu
+                            </label>
                             <input 
                               type="time" required
-                              className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-purple/10 rounded-[2rem] outline-none transition-all font-bold text-gray-900 text-sm"
+                              className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-purple/10 rounded-[2rem] outline-none transition-all font-bold text-gray-900"
                               value={appointmentData.time}
                               onChange={(e) => setAppointmentData({...appointmentData, time: e.target.value})}
                             />
                           </div>
                         </div>
-                        <div className="space-y-3">
-                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Keperluan Pertemuan</label>
+
+                        <div className="space-y-4">
+                          <label className="flex items-center gap-2 text-[10px] font-black text-gray-700 uppercase tracking-[0.2em]">
+                            <MessageSquare size={14} className="text-vibrant-pink" />
+                            Keperluan Pertemuan
+                          </label>
                           <textarea 
-                            required rows={3}
+                            required rows={4}
                             className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-purple/10 rounded-[2rem] outline-none transition-all font-bold text-gray-900 text-sm"
-                            placeholder="Apa keperluan janji temu Anda?"
+                            placeholder="Jelaskan maksud dan tujuan pertemuan Anda..."
                             value={appointmentData.purpose}
                             onChange={(e) => setAppointmentData({...appointmentData, purpose: e.target.value})}
                           ></textarea>
                         </div>
+
                         <button 
                           type="submit" disabled={loading}
-                          className="w-full py-6 bg-vibrant-purple text-white rounded-[2rem] font-black uppercase tracking-[0.2em] shadow-xl hover:shadow-vibrant-purple/20 transition-all flex items-center justify-center gap-4"
+                          className="w-full py-6 md:py-8 bg-gradient-to-r from-vibrant-purple to-vibrant-pink text-white rounded-[2.5rem] font-black text-xl uppercase tracking-[0.2em] shadow-xl shadow-vibrant-purple/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-4 group"
                         >
-                          {loading ? <div className="w-6 h-6 border-4 border-white/30 border-t-white rounded-full animate-spin"></div> : "Ajukan Janji Temu"}
+                          {loading ? (
+                            <div className="w-8 h-8 border-4 border-white/30 border-t-white rounded-full animate-spin"></div>
+                          ) : (
+                            <>
+                              <Plus size={24} className="group-hover:rotate-90 transition-transform" />
+                              <span>Ajukan Janji Temu</span>
+                            </>
+                          )}
                         </button>
                       </form>
                     ) : (
-                      <div className="text-center py-10 space-y-6">
-                        <div className="w-20 h-20 bg-vibrant-purple/10 text-vibrant-purple rounded-[2rem] flex items-center justify-center mx-auto">
-                          <Check size={40} />
+                      <div className="text-center py-20 p-8 space-y-10">
+                        <div className="w-24 h-24 bg-vibrant-purple/10 text-vibrant-purple rounded-[2.5rem] flex items-center justify-center mx-auto shadow-inner">
+                          <Check size={48} strokeWidth={3} />
                         </div>
-                        <h3 className="text-3xl font-black text-gray-900 uppercase">Permohonan Terkirim!</h3>
-                        <p className="text-gray-500 font-bold max-w-sm mx-auto">Janji temu Anda telah diajukan. Silakan tunggu konfirmasi saat tiba di sekolah.</p>
+                        <div className="space-y-4">
+                          <h3 className="text-4xl font-black text-gray-900 uppercase tracking-tight">Permohonan Terkirim!</h3>
+                          <p className="text-gray-500 font-bold max-w-sm mx-auto uppercase tracking-wide text-sm">Janji temu Anda telah diajukan ke sistem. Silakan konfirmasi unit terkait saat tiba di sekolah.</p>
+                        </div>
                         <button 
-                          onClick={() => setAppointmentSuccess(false)}
-                          className="px-10 py-4 bg-gray-100 text-gray-500 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-playful-100 transition-all"
+                          onClick={() => {
+                            setAppointmentSuccess(false);
+                            setAppointmentData({
+                              guest_name: '',
+                              organization: '',
+                              phone: '',
+                              target_category: '',
+                              target_class: '',
+                              target_name: '',
+                              teacher_id: '',
+                              date: new Date().toISOString().split('T')[0],
+                              time: '',
+                              purpose: ''
+                            });
+                          }}
+                          className="px-12 py-5 bg-gray-100 text-gray-900 rounded-[2rem] font-black uppercase tracking-[0.2em] text-xs hover:bg-playful-100 transition-all shadow-md active:scale-95"
                         >
                           ISI FORMULIR LAGI
                         </button>

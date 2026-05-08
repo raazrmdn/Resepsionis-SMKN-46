@@ -96,37 +96,49 @@ ALTER TABLE public.student_dispensations ENABLE ROW LEVEL SECURITY;
 
 -- 10. RLS POLICIES
 
--- GUESTS POLICIES
-CREATE POLICY "Everyone authenticated can view guests" 
-ON public.guests FOR SELECT USING (auth.role() = 'authenticated');
+-- PUBLIC ACCESS POLICIES (Landing Page)
+-- ==========================================
 
-CREATE POLICY "Authenticated users can create guest entries" 
-ON public.guests FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+-- PROFILES: Everyone can see profiles (to select teachers)
+DROP POLICY IF EXISTS "Profiles are viewable by everyone" ON public.profiles;
+CREATE POLICY "Profiles are viewable by everyone" ON public.profiles FOR SELECT USING (true);
 
-CREATE POLICY "Admins and Receptionists can manage guests" 
-ON public.guests FOR ALL USING (
+-- APPOINTMENTS: Public can insert, and everyone can view (for status tracking perhaps)
+DROP POLICY IF EXISTS "Appointments are viewable by everyone" ON public.appointments;
+CREATE POLICY "Appointments are viewable by everyone" ON public.appointments FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Anyone can create appointments (Public & Private)" ON public.appointments;
+CREATE POLICY "Anyone can create appointments" ON public.appointments FOR INSERT WITH CHECK (true);
+
+-- GUESTS: Public can insert
+DROP POLICY IF EXISTS "Everyone can view guests" ON public.guests;
+CREATE POLICY "Everyone can view guests" ON public.guests FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Anyone can create guest entries" ON public.guests;
+CREATE POLICY "Anyone can create guest entries" ON public.guests FOR INSERT WITH CHECK (true);
+
+-- ADMIN & STAFF POLICIES (Authenticated)
+-- ==========================================
+
+-- PROFILES: Users can update their own
+DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
+CREATE POLICY "Users can update their own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
+
+-- GUESTS: Management
+DROP POLICY IF EXISTS "Admins and Receptionists can manage guests" ON public.guests;
+CREATE POLICY "Admins and Receptionists can manage guests" ON public.guests FOR ALL TO authenticated USING (
   EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'receptionist'))
 );
 
--- APPOINTMENTS POLICIES
-CREATE POLICY "Authenticated users can view appointments" 
-ON public.appointments FOR SELECT USING (
-  auth.uid() = receptionist_id OR 
-  auth.uid() = teacher_id OR
-  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'receptionist'))
-);
-
-CREATE POLICY "Anyone can create appointments (Public & Private)" 
-ON public.appointments FOR INSERT WITH CHECK (true);
-
-CREATE POLICY "Teachers and Admins can update appointments" 
-ON public.appointments FOR UPDATE USING (
+-- APPOINTMENTS: Management
+DROP POLICY IF EXISTS "Teachers and Admins can update appointments" ON public.appointments;
+CREATE POLICY "Teachers and Admins can update appointments" ON public.appointments FOR UPDATE TO authenticated USING (
   auth.uid() = teacher_id OR 
   EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'receptionist'))
 );
 
-CREATE POLICY "Admins and Receptionists can delete appointments" 
-ON public.appointments FOR DELETE USING (
+DROP POLICY IF EXISTS "Admins and Receptionists can delete appointments" ON public.appointments;
+CREATE POLICY "Admins and Receptionists can delete appointments" ON public.appointments FOR DELETE TO authenticated USING (
   EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'receptionist'))
 );
 
@@ -200,7 +212,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 12. MIGRATION HELPER (Run this if you get "invalid input value for enum user_role" error)
+-- 12. MIGRATION HELPER
 -- ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'staff';
 -- ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'student';
 -- ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'guest';
+
+-- 13. EXPLICIT GRANTS
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO anon, authenticated, service_role;

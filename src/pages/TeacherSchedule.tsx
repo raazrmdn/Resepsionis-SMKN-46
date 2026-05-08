@@ -39,6 +39,7 @@ export default function TeacherSchedule() {
     notes: ''
   });
   const [saving, setSaving] = useState(false);
+  const [selectedTeacherId, setSelectedTeacherId] = useState<string>('');
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
   useEffect(() => {
@@ -87,17 +88,7 @@ export default function TeacherSchedule() {
 
       // If user is a teacher, set their current schedule
       if (profile?.role === 'teacher') {
-        const current = (scheduleData || []).find(s => s.teacher_id === profile.id);
-        if (current) {
-          setMySchedule(current);
-        } else {
-          setMySchedule({
-            teacher_id: profile.id,
-            date: today,
-            status: 'available',
-            notes: ''
-          });
-        }
+        setSelectedTeacherId(profile.id);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -106,14 +97,30 @@ export default function TeacherSchedule() {
     }
   }
 
+  useEffect(() => {
+    if (selectedTeacherId) {
+      const current = schedules.find(s => s.teacher_id === selectedTeacherId);
+      if (current) {
+        setMySchedule(current);
+      } else {
+        setMySchedule({
+          teacher_id: selectedTeacherId,
+          date: today,
+          status: 'available',
+          notes: ''
+        });
+      }
+    }
+  }, [selectedTeacherId, schedules, today]);
+
   async function handleSaveSchedule() {
-    if (!profile) return;
+    if (!profile || !selectedTeacherId) return;
     setSaving(true);
     setNotification(null);
     try {
       const scheduleToSave = {
         ...mySchedule,
-        teacher_id: profile.id,
+        teacher_id: selectedTeacherId,
         date: today,
         updated_at: new Date().toISOString()
       };
@@ -125,7 +132,7 @@ export default function TeacherSchedule() {
 
       if (error) throw error;
       
-      setNotification({ type: 'success', message: 'Jadwal Anda berhasil diperbarui! ✨' });
+      setNotification({ type: 'success', message: 'Jadwal berhasil diperbarui! ✨' });
       // Refresh local data
       fetchData();
     } catch (error: any) {
@@ -171,28 +178,28 @@ export default function TeacherSchedule() {
 
   return (
     <div className="space-y-10">
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-        <div>
-          <h1 className="text-4xl font-black text-gray-900 tracking-tight uppercase">
+      <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 md:gap-8">
+        <div className="max-w-xl">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-gray-900 tracking-tight uppercase leading-tight sm:leading-none">
             Jadwal <span className="text-vibrant-purple">Guru</span>
           </h1>
-          <p className="text-gray-500 font-bold mt-1">
+          <p className="text-gray-500 font-bold mt-2 text-xs sm:text-sm md:text-base">
             Status kehadiran dan kegiatan guru SMKN 46 Jakarta hari ini.
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
           <a 
             href="https://drive.google.com/file/d/1EuPoFlGxpKZAWnQ6lmsW3aWxb0ppfCvo/view?usp=sharing" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-3 px-6 py-3 bg-vibrant-blue text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-vibrant-blue/90 shadow-lg shadow-vibrant-blue/20 transition-all active:scale-95"
+            className="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-4 bg-vibrant-blue text-white rounded-xl sm:rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-vibrant-blue/90 shadow-lg shadow-vibrant-blue/20 transition-all active:scale-95 whitespace-nowrap"
           >
             <FileText size={18} />
-            Lihat Jadwal Pelajaran (PDF)
+            JADWAL (PDF)
           </a>
-          <div className="bg-white px-6 py-3 rounded-2xl shadow-sm border-4 border-playful-100 flex items-center gap-3">
+          <div className="bg-white px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl shadow-sm border-2 border-playful-100 flex items-center justify-center gap-2 sm:gap-3">
             <Calendar size={18} className="text-vibrant-purple" />
-            <span className="font-black text-xs uppercase tracking-widest text-gray-900">
+            <span className="font-black text-[10px] uppercase tracking-widest text-gray-900 text-center">
               {format(new Date(), 'EEEE, dd MMMM yyyy', { locale: id })}
             </span>
           </div>
@@ -223,7 +230,7 @@ export default function TeacherSchedule() {
         </AnimatePresence>
       </div>
 
-      {profile?.role === 'teacher' && (
+      { (profile?.role === 'teacher' || profile?.role === 'admin' || profile?.role === 'receptionist') && (
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -238,33 +245,58 @@ export default function TeacherSchedule() {
               <Clock size={24} />
             </div>
             <div>
-              <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase">Update Status Anda</h2>
-              <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest">Beritahukan posisi Anda hari ini kepada resepsionis</p>
+              <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase">
+                {profile?.role === 'teacher' ? 'Update Status Anda' : 'Update Status Guru'}
+              </h2>
+              <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest">
+                {profile?.role === 'teacher' ? 'Beritahukan posisi Anda hari ini kepada resepsionis' : 'Perbarui kehadiran guru untuk hari ini'}
+              </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-            {STATUS_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => setMySchedule({ ...mySchedule, status: opt.value as any })}
-                className={cn(
-                  "p-4 rounded-2xl border-4 transition-all flex flex-col items-center gap-2 group",
-                  mySchedule.status === opt.value 
-                    ? `${opt.bgColor} border-${opt.value === 'available' ? 'green-500' : opt.value === 'teaching' ? 'vibrant-blue' : opt.value === 'duty' ? 'vibrant-purple' : opt.value === 'out_of_school' ? 'amber-500' : 'red-500'} shadow-lg scale-105` 
-                    : "bg-white border-playful-50 hover:border-gray-200"
-                )}
-              >
-                <div className={cn(
-                  "w-3 h-3 rounded-full",
-                  opt.color
-                )}></div>
-                <span className={cn(
-                  "text-[10px] font-black uppercase tracking-widest",
-                  mySchedule.status === opt.value ? opt.textColor : "text-gray-400"
-                )}>{opt.label}</span>
-              </button>
-            ))}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            {profile?.role !== 'teacher' && (
+              <div className="space-y-3">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">Pilih Guru</label>
+                <div className="relative">
+                  <User className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+                  <select
+                    className="w-full pl-12 pr-6 py-4 bg-playful-50 border-4 border-transparent focus:border-vibrant-purple/10 rounded-2xl outline-none transition-all font-black appearance-none text-[12px] text-gray-900"
+                    value={selectedTeacherId}
+                    onChange={(e) => setSelectedTeacherId(e.target.value)}
+                  >
+                    <option value="">PILIH GURU...</option>
+                    {teachers.sort((a, b) => a.full_name.localeCompare(b.full_name)).map((t) => (
+                      <option key={t.id} value={t.id}>{t.full_name.toUpperCase()}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+            <div className="space-y-3">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">Pilih Status</label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3">
+                {STATUS_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setMySchedule({ ...mySchedule, status: opt.value as any })}
+                    className={cn(
+                      "p-2 sm:p-3 rounded-xl border-2 transition-all flex items-center justify-center gap-2 sm:flex-col sm:gap-1 group",
+                      mySchedule.status === opt.value 
+                        ? `${opt.bgColor} border-${opt.value === 'available' ? 'green-500' : opt.value === 'teaching' ? 'vibrant-blue' : opt.value === 'duty' ? 'vibrant-purple' : opt.value === 'out_of_school' ? 'amber-500' : 'red-500'} shadow-md` 
+                        : "bg-white border-gray-100 hover:border-gray-200"
+                    )}
+                  >
+                    <div className={cn("w-2 h-2 rounded-full shrink-0", opt.color)}></div>
+                    <span className={cn(
+                      "text-[8px] sm:text-[9px] font-black uppercase tracking-tight sm:tracking-widest",
+                      mySchedule.status === opt.value ? opt.textColor : "text-gray-400"
+                    )}>{opt.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           <div className="space-y-4 mb-8">
@@ -278,21 +310,21 @@ export default function TeacherSchedule() {
             />
           </div>
 
-          <div className="flex justify-end gap-4">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 md:gap-4">
              <button 
                onClick={fetchData}
-               className="flex items-center gap-2 px-8 py-5 bg-playful-50 text-vibrant-purple rounded-[2rem] font-black text-xs uppercase tracking-widest hover:bg-playful-100 transition-all active:scale-95 border-2 border-vibrant-purple/10"
+               className="flex items-center justify-center gap-2 px-6 py-4 sm:px-8 sm:py-5 bg-playful-50 text-vibrant-purple rounded-xl sm:rounded-[2rem] font-black text-[10px] uppercase tracking-widest hover:bg-playful-100 transition-all active:scale-95 border-2 border-vibrant-purple/10"
              >
                <RotateCcw size={18} /> Refresh Data
              </button>
              <button 
                onClick={handleSaveSchedule}
-               disabled={saving}
-               className="flex items-center gap-2 px-10 py-5 bg-vibrant-purple text-white rounded-[2rem] font-black text-xs uppercase tracking-widest hover:bg-vibrant-purple/90 shadow-lg shadow-vibrant-purple/20 transition-all active:scale-95 disabled:opacity-50"
+               disabled={saving || !selectedTeacherId}
+               className="flex items-center justify-center gap-2 px-6 py-4 sm:px-10 sm:py-5 bg-gradient-to-r from-vibrant-purple to-vibrant-pink text-white rounded-xl sm:rounded-[2rem] font-black text-[10px] uppercase tracking-widest hover:scale-105 shadow-xl shadow-vibrant-purple/20 transition-all active:scale-95 disabled:opacity-50"
              >
                {saving ? 'Menyimpan...' : (
                  <>
-                   <Save size={18} /> Simpan Perubahan Jadwal
+                   <Save size={18} /> Simpan Perubahan
                  </>
                )}
              </button>

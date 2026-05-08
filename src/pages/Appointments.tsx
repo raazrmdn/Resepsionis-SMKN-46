@@ -164,33 +164,6 @@ export default function Appointments() {
       <div className="mb-12 text-center px-4">
         <h1 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tighter uppercase mb-4">Input <span className="text-vibrant-purple">Janji Temu</span></h1>
         <p className="text-gray-500 font-bold mb-6 text-sm md:text-base">Silakan isi formulir di bawah untuk mendaftarkan jadwal pertemuan tamu.</p>
-        
-      <motion.div 
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-8 p-6 bg-white border-4 border-dashed border-playful-200 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-4"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-playful-100 rounded-xl flex items-center justify-center text-vibrant-purple">
-            <Search size={20} />
-          </div>
-          <div className="text-left">
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Link Untuk QR Code Janji Temu (Gunakan Untuk Guest)</p>
-            <p className="font-mono text-xs font-bold text-vibrant-purple break-all text-left">
-              {window.location.origin}/public/appointment
-            </p>
-          </div>
-        </div>
-        <button 
-          onClick={() => {
-            navigator.clipboard.writeText(`${window.location.origin}/public/appointment`);
-            setNotification({ type: 'success', message: 'Link public berhasil disalin! 📋' });
-          }}
-          className="px-6 py-3 bg-playful-100 hover:bg-vibrant-purple hover:text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 text-vibrant-purple"
-        >
-          Salin Link Public
-        </button>
-      </motion.div>
       </div>
 
       <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[100] w-full max-w-xl px-4 pointer-events-none">

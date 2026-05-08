@@ -91,7 +91,7 @@ ALTER TABLE public.guests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.appointments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.packages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.system_reports ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.teacher_schedule ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.teacher_schedules ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.student_dispensations ENABLE ROW LEVEL SECURITY;
 
 -- 10. RLS POLICIES
@@ -162,12 +162,12 @@ ON public.system_reports FOR UPDATE USING (
 
 -- TEACHER SCHEDULE POLICIES
 CREATE POLICY "Teacher schedules are viewable by everyone" 
-ON public.teacher_schedule FOR SELECT USING (true);
+ON public.teacher_schedules FOR SELECT USING (true);
 
-CREATE POLICY "Teachers can manage their own schedule" 
-ON public.teacher_schedule FOR ALL USING (
+CREATE POLICY "Teachers, Admins, and Receptionists can manage teacher schedules" 
+ON public.teacher_schedules FOR ALL USING (
   teacher_id = auth.uid() OR 
-  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'receptionist'))
 );
 
 -- STUDENT DISPENSATIONS POLICIES

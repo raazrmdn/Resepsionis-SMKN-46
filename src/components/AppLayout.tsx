@@ -82,39 +82,42 @@ export default function AppLayout() {
       
       <div className="flex-1 flex flex-col min-w-0">
         {/* Mobile Header */}
-        <header className="lg:hidden bg-white border-b-4 border-playful-200 px-4 py-3 flex items-center justify-between sticky top-0 z-[40]">
-          <div className="flex items-center gap-2">
+        <header className="lg:hidden bg-white border-b-2 border-playful-100 px-4 py-3 flex items-center justify-between sticky top-0 z-[40] shadow-sm">
+          <div className="flex items-center gap-3">
             <img 
               src="https://drive.google.com/thumbnail?id=1w1hSW0d-j-ni3t7AqEAhsSnC-FUGz4kh&sz=w200" 
               alt="Logo" 
-              className="w-10 h-10 object-contain"
+              className="w-10 h-10 object-contain drop-shadow-sm"
               referrerPolicy="no-referrer"
             />
-            <h1 className="text-gray-900 font-black text-[10px] tracking-tighter uppercase leading-none">SMKN 46<br/><span className="text-vibrant-purple">Receptionist</span></h1>
+            <div>
+              <h1 className="text-gray-900 font-black text-[10px] tracking-tighter uppercase leading-none">SMKN 46</h1>
+              <p className="text-vibrant-purple text-[8px] font-black uppercase tracking-widest mt-0.5">Receptionist</p>
+            </div>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             <button 
               onClick={() => signOut()}
-              className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-all"
+              className="w-10 h-10 flex items-center justify-center text-red-500 hover:bg-red-50 rounded-xl transition-all"
               title="Logout"
             >
               <LogOut size={18} />
             </button>
             <button 
               onClick={() => setIsSidebarOpen(true)}
-              className="p-2 bg-playful-50 text-vibrant-purple rounded-xl hover:bg-playful-100 transition-all border-2 border-playful-200"
+              className="w-10 h-10 flex items-center justify-center bg-vibrant-purple text-white rounded-xl hover:scale-105 shadow-lg shadow-vibrant-purple/20 transition-all"
             >
-              <Menu size={18} />
+              <Menu size={20} />
             </button>
           </div>
         </header>
 
-        <main className="flex-1 lg:ml-64 p-6 md:p-12 relative overflow-hidden">
+        <main className="flex-1 lg:ml-64 p-4 sm:p-8 md:p-12 relative overflow-hidden">
         {/* Background Accents */}
         <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-vibrant-pink/5 rounded-full blur-[120px] pointer-events-none"></div>
         <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-vibrant-blue/5 rounded-full blur-[120px] pointer-events-none"></div>
         
-        <div className="relative z-10">
+        <div className="relative z-10 max-w-[1600px] mx-auto">
           <Outlet />
         </div>
         </main>

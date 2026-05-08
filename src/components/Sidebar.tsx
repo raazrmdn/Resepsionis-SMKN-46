@@ -43,7 +43,7 @@ export default function Sidebar({ role, isOpen, onClose }: SidebarProps) {
       title: 'Dashboard',
       icon: LayoutDashboard,
       path: '/app',
-      roles: ['admin', 'receptionist', 'teacher', 'staff', 'student', 'guest']
+      roles: ['admin', 'receptionist', 'staff', 'student', 'guest']
     },
     {
       title: 'Input Data Tamu',
@@ -125,9 +125,9 @@ export default function Sidebar({ role, isOpen, onClose }: SidebarProps) {
         {/* Mobile Close Button */}
         <button 
           onClick={onClose}
-          className="absolute right-2 top-2 p-1.5 text-gray-400 hover:text-vibrant-purple lg:hidden z-[70] transition-colors"
+          className="absolute right-4 top-4 w-10 h-10 flex items-center justify-center bg-gray-50 text-gray-400 hover:text-vibrant-purple hover:bg-playful-100 rounded-xl lg:hidden z-[70] transition-all border-2 border-gray-100 shadow-sm"
         >
-          <X size={20} />
+          <X size={24} />
         </button>
         {(role === 'guest' || role === 'student') ? (
         <div className="p-6 border-b-4 border-playful-200">

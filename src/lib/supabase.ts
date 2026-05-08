@@ -99,8 +99,10 @@ export interface StudentDispensation {
   id: string;
   student_name: string;
   student_class: string;
+  lesson_hour: string;
   reason: string;
-  granting_teacher: string;
+  wali_kelas: string;
+  piket_teacher: string;
   dispensation_type: 'back_to_school' | 'go_home';
   status: 'out' | 'returned' | 'home';
   receptionist_id: string;

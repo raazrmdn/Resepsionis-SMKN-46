@@ -55,22 +55,22 @@ const StatCard = React.memo(({ title, value, icon: Icon, color, trend, delay }: 
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ delay, duration: 0.4 }}
-    className="bg-white p-6 md:p-8 rounded-[2.5rem] shadow-xl border-4 border-playful-200 relative overflow-hidden group"
+    className="bg-white p-4 sm:p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] shadow-xl border-4 border-playful-200 relative overflow-hidden group"
   >
-    <div className={cn("absolute -right-4 -top-4 w-24 h-24 rounded-full opacity-10 transition-transform duration-500", color)}></div>
-    <div className="flex justify-between items-start mb-6 relative z-10">
-      <div className={cn("p-4 rounded-full shadow-lg text-white", color)}>
-        <Icon size={24} />
+    <div className={cn("absolute -right-4 -top-4 w-20 h-20 sm:w-24 sm:h-24 rounded-full opacity-10 transition-transform duration-500", color)}></div>
+    <div className="flex justify-between items-start mb-4 sm:mb-6 relative z-10">
+      <div className={cn("p-3 sm:p-4 rounded-xl sm:rounded-full shadow-lg text-white", color)}>
+        <Icon size={20} className="sm:w-6 sm:h-6" />
       </div>
       {trend && (
-        <div className="flex items-center gap-1 bg-green-50 text-green-600 px-3 py-1 rounded-full text-[10px] font-black border-2 border-green-100">
-          <TrendingUp size={12} />
+        <div className="flex items-center gap-1 bg-green-50 text-green-600 px-2 sm:px-3 py-1 rounded-full text-[8px] sm:text-[10px] font-black border-2 border-green-100">
+          <TrendingUp size={10} className="sm:w-3 sm:h-3" />
           <span>{trend}</span>
         </div>
       )}
     </div>
-    <h3 className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] mb-1 relative z-10">{title}</h3>
-    <p className="text-4xl font-black text-gray-900 relative z-10 tracking-tighter">{value}</p>
+    <h3 className="text-gray-400 text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] mb-1 relative z-10">{title}</h3>
+    <p className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 relative z-10 tracking-tighter leading-none">{value}</p>
   </motion.div>
 ));
 
@@ -84,11 +84,11 @@ const ActionCard = React.memo(({ title, icon: Icon, onClick, color, delay }: any
     className="cursor-pointer"
     onClick={onClick}
   >
-    <div className="bg-white p-6 rounded-[2rem] shadow-xl border-4 border-playful-200 flex flex-col items-center text-center gap-4 group transition-colors hover:bg-playful-50 h-full">
-      <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-lg", color)}>
-        <Icon size={28} />
+    <div className="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] shadow-xl border-4 border-playful-200 flex flex-col items-center text-center gap-3 sm:gap-4 group transition-colors hover:bg-playful-50 h-full">
+      <div className={cn("w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center text-white shadow-lg", color)}>
+        <Icon size={20} className="sm:w-7 sm:h-7" />
       </div>
-      <h3 className="font-black text-gray-900 text-[10px] uppercase tracking-widest">{title}</h3>
+      <h3 className="font-black text-gray-900 text-[8px] sm:text-[10px] uppercase tracking-widest leading-tight">{title}</h3>
     </div>
   </motion.div>
 ));
@@ -101,6 +101,12 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null);
 
   const handleNavigate = useCallback((path: string) => navigate(path), [navigate]);
+
+  useEffect(() => {
+    if (profile?.role === 'teacher') {
+      navigate('/app/teacher-schedule', { replace: true });
+    }
+  }, [profile, navigate]);
 
   // --- Memo Logic ---
   const [notes, setNotes] = useState<{ id: string, text: string, time: string }[]>(() => {
@@ -204,21 +210,21 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-12">
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-        <div>
+      <header className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 md:gap-8">
+        <div className="max-w-2xl">
           <div className="flex items-center gap-3 mb-2">
-            <Zap className="text-vibrant-yellow fill-vibrant-yellow" size={20} />
-            <span className="text-vibrant-purple font-black text-[10px] uppercase tracking-[0.4em]">
+            <Zap className="text-vibrant-yellow fill-vibrant-yellow" size={18} />
+            <span className="text-vibrant-purple font-black text-[9px] sm:text-[10px] uppercase tracking-[0.4em]">
               {profile?.role === 'admin' ? 'Administrative Overlook' : 
                profile?.role === 'receptionist' ? 'Receptionist Center' : 
                profile?.role === 'teacher' ? 'Teacher Dashboard' : 
                profile?.role === 'student' ? 'Student Workspace' : 'Meja Tamu'}
             </span>
           </div>
-          <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-gray-900 tracking-tight leading-tight uppercase">
             HELLO, <span className="text-transparent bg-clip-text bg-gradient-to-r from-vibrant-purple to-vibrant-pink">{profile?.full_name?.split(' ')[0].toUpperCase()}!</span>
           </h1>
-          <p className="text-gray-500 font-bold mt-2 text-sm md:text-base">
+          <p className="text-gray-500 font-bold mt-2 text-xs sm:text-sm md:text-base">
             {profile?.role === 'admin' ? 'Siap memantau sistem SMKN 46 hari ini?' : 
              profile?.role === 'receptionist' ? 'Resepsionis SMKN 46 siap melayani tamu hari ini.' :
              profile?.role === 'teacher' ? 'Siap mengajar dan memandu siswa hari ini?' :
@@ -231,7 +237,7 @@ export default function Dashboard() {
           <motion.div 
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="flex items-center gap-4 p-4 bg-red-50 border-4 border-red-100 rounded-2xl text-red-600 shadow-lg"
+            className="flex items-center gap-4 p-4 bg-red-50 border-4 border-red-100 rounded-2xl text-red-600 shadow-lg w-full lg:w-auto"
           >
             <div className="w-10 h-10 bg-red-500 rounded-xl flex items-center justify-center text-white shrink-0">
               <Zap size={20} />
@@ -249,8 +255,8 @@ export default function Dashboard() {
           </motion.div>
         )}
 
-        <div className="bg-white px-6 py-4 rounded-3xl shadow-lg border-4 border-playful-200 flex items-center gap-4">
-          <div className="w-10 h-10 bg-vibrant-blue/10 rounded-xl flex items-center justify-center text-vibrant-blue">
+        <div className="bg-white px-5 py-3 rounded-2xl shadow-lg border-2 border-playful-100 flex items-center gap-4 w-full sm:w-auto self-stretch sm:self-auto">
+          <div className="w-10 h-10 bg-vibrant-blue/10 rounded-xl flex items-center justify-center text-vibrant-blue shrink-0">
             <Calendar size={20} />
           </div>
           <div>
@@ -261,7 +267,7 @@ export default function Dashboard() {
       </header>
 
       {/* Common Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
         <StatCard title="Tamu Hari Ini" value={stats.totalGuests} icon={Users} color="bg-vibrant-pink" trend="+12%" delay={0.1} />
         <StatCard title="Janji Aktif" value={stats.activeAppointments} icon={Calendar} color="bg-vibrant-purple" trend="+5%" delay={0.2} />
         <StatCard title="Paket Pending" value={stats.pendingPackages} icon={Package} color="bg-vibrant-blue" delay={0.3} />

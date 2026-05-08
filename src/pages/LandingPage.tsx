@@ -1,12 +1,177 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { motion } from 'motion/react';
-import { ShieldCheck, Users, Calendar, Package, ArrowRight, School, FileText, Rocket, Sparkles, MapPin, Mail, Phone, Facebook, Instagram, Twitter, Youtube, LogOut } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { 
+  ShieldCheck, Users, Calendar, Package, ArrowRight, School, FileText, 
+  Rocket, Sparkles, MapPin, Mail, Phone, Facebook, Instagram, Twitter, 
+  Youtube, LogOut, Building2, UserCircle, MessageSquare, Building, Clock, 
+  Search, Plus, Check, Building as BuildingIcon 
+} from 'lucide-react';
 import { useAuth } from '../AuthContext';
 import { cn } from '../lib/utils';
+import { supabase, type Profile } from '../lib/supabase';
+import { WALI_KELAS_LIST, CLASS_LIST, APPOINTMENT_CLASSES } from '../constants';
 
 export default function LandingPage() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const [activeForm, setActiveForm] = useState<'visit' | 'appointment'>('visit');
+  const [loading, setLoading] = useState(false);
+  const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+
+  // Visit Form State
+  const [visitData, setVisitData] = useState({
+    organization: '',
+    visitor_name: '',
+    visitor_count: '1',
+    phone: '',
+    target_unit: '',    
+    target_person: '',  
+    date: new Date().toISOString().split('T')[0],
+    time: '',
+    purpose: ''
+  });
+  const [visitTargetClass, setVisitTargetClass] = useState('');
+  const [visitSuccess, setVisitSuccess] = useState(false);
+
+  // Appointment Form State
+  const [appointmentData, setAppointmentData] = useState({
+    guest_name: '',
+    organization: '',
+    phone: '',
+    target_category: '',
+    target_class: '',
+    target_name: '',
+    teacher_id: '',
+    date: new Date().toISOString().split('T')[0],
+    time: '',
+    purpose: ''
+  });
+  const [appointmentPersonnel, setAppointmentPersonnel] = useState<Profile[]>([]);
+  const [appointmentSuccess, setAppointmentSuccess] = useState(false);
+
+  useEffect(() => {
+    fetchPersonnel();
+    // Handle anchor links from QR codes
+    const hash = window.location.hash;
+    if (hash === '#input-janji-temu') {
+      setActiveForm('appointment');
+      setTimeout(() => {
+        document.getElementById('input-janji-temu')?.scrollIntoView({ behavior: 'smooth' });
+      }, 500);
+    } else if (hash === '#input-kunjungan') {
+      setActiveForm('visit');
+      setTimeout(() => {
+        document.getElementById('input-kunjungan')?.scrollIntoView({ behavior: 'smooth' });
+      }, 500);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+
+  async function fetchPersonnel() {
+    try {
+      const { data } = await supabase.from('profiles').select('*').in('role', ['teacher', 'admin', 'staff', 'student']);
+      setAppointmentPersonnel(data || []);
+    } catch (err) {
+      console.error('Fetch personnel error:', err);
+    }
+  }
+
+  async function handleVisitSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const displayTarget = visitData.target_unit === 'Peserta Didik' 
+        ? `${visitTargetClass} - ${visitData.target_person}` 
+        : visitData.target_person;
+
+      const fullPurpose = `[KUNJUNGAN RESMI: ${visitData.organization}] (${visitData.visitor_count} Orang) - Menuju ${visitData.target_unit}: ${displayTarget}. Pesan: ${visitData.purpose}`;
+      
+      const { error: aptError } = await supabase
+        .from('appointments')
+        .insert([{ 
+          guest_name: visitData.visitor_name,
+          organization: visitData.organization || 'Pribadi',
+          phone: visitData.phone || '-',
+          date: visitData.date,
+          time: visitData.time,
+          purpose: fullPurpose,
+          status: 'pending',
+          teacher_id: null,
+          receptionist_id: null
+        }]);
+
+      if (aptError) throw aptError;
+
+      await supabase
+        .from('guests')
+        .insert([{
+          name: visitData.visitor_name,
+          organization: visitData.organization || '-',
+          purpose: fullPurpose,
+          phone: visitData.phone || '-',
+          receptionist_id: null
+        }]);
+
+      setVisitSuccess(true);
+      setNotification({ type: 'success', message: 'Kunjungan berhasil dicatat!' });
+    } catch (error: any) {
+      setNotification({ type: 'error', message: 'Gagal mencatat: ' + (error.message || 'Error sistem.') });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleAppointmentSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const isManual = appointmentData.teacher_id === 'manual' || !appointmentData.teacher_id;
+      const selectedTeacher = isManual ? null : appointmentPersonnel.find(p => p.id === appointmentData.teacher_id);
+      const displayTargetName = selectedTeacher ? selectedTeacher.full_name : appointmentData.target_name;
+      
+      const categoryLabel = appointmentData.target_class ? `${appointmentData.target_category} (${appointmentData.target_class})` : appointmentData.target_category;
+      const fullPurpose = `[${categoryLabel}: ${displayTargetName}] - ${appointmentData.purpose}`;
+      
+      const { error: aptError } = await supabase
+        .from('appointments')
+        .insert([{ 
+          guest_name: appointmentData.guest_name,
+          teacher_id: selectedTeacher ? selectedTeacher.id : null, 
+          date: appointmentData.date,
+          time: appointmentData.time,
+          purpose: fullPurpose,
+          status: 'pending',
+          phone: appointmentData.phone || '-',
+          organization: appointmentData.organization || 'Pribadi',
+          receptionist_id: profile?.id || null
+        }]);
+
+      if (aptError) throw aptError;
+
+      await supabase
+        .from('guests')
+        .insert([{
+          name: appointmentData.guest_name,
+          organization: appointmentData.organization || '-',
+          purpose: fullPurpose,
+          phone: appointmentData.phone || '-', 
+          receptionist_id: profile?.id || null
+        }]);
+
+      setAppointmentSuccess(true);
+      setNotification({ type: 'success', message: 'Janji temu berhasil diajukan!' });
+    } catch (error: any) {
+      setNotification({ type: 'error', message: 'Gagal mendaftar: ' + (error.message || 'Error sistem.') });
+    } finally {
+      setLoading(false);
+    }
+  }
 
   if (user) {
     return <Navigate to="/app" replace />;
@@ -108,14 +273,26 @@ export default function LandingPage() {
                   <div className="space-y-6">
                     <div className="h-12 w-full bg-playful-50 rounded-2xl"></div>
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="h-32 bg-vibrant-purple/5 rounded-3xl border-2 border-dashed border-vibrant-purple/10 flex flex-col items-center justify-center gap-3">
-                        <Users className="text-vibrant-purple" size={32} />
-                        <div className="w-12 h-3 bg-vibrant-purple/10 rounded-full"></div>
-                      </div>
-                      <div className="h-32 bg-vibrant-pink/5 rounded-3xl border-2 border-dashed border-vibrant-pink/10 flex flex-col items-center justify-center gap-3">
-                        <Calendar className="text-vibrant-pink" size={32} />
-                        <div className="w-12 h-3 bg-vibrant-pink/10 rounded-full"></div>
-                      </div>
+                      <button 
+                        onClick={() => {
+                          setActiveForm('visit');
+                          document.getElementById('form-mandiri')?.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                        className="h-32 bg-vibrant-purple/5 rounded-3xl border-2 border-dashed border-vibrant-purple/20 flex flex-col items-center justify-center gap-2 hover:bg-vibrant-purple/10 transition-all group/icon shadow-sm"
+                      >
+                        <Users className="text-vibrant-purple group-hover/icon:scale-110 transition-transform" size={32} />
+                        <span className="text-[10px] font-black text-vibrant-purple uppercase tracking-tight">Input Kunjungan</span>
+                      </button>
+                      <button 
+                        onClick={() => {
+                          setActiveForm('appointment');
+                          document.getElementById('form-mandiri')?.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                        className="h-32 bg-vibrant-pink/5 rounded-3xl border-2 border-dashed border-vibrant-pink/20 flex flex-col items-center justify-center gap-2 hover:bg-vibrant-pink/10 transition-all group/icon shadow-sm"
+                      >
+                        <Calendar className="text-vibrant-pink group-hover/icon:scale-110 transition-transform" size={32} />
+                        <span className="text-[10px] font-black text-vibrant-pink uppercase tracking-tight">Input Janji Temu</span>
+                      </button>
                     </div>
                     <div className="h-20 w-full bg-vibrant-blue/5 rounded-2xl flex items-center px-6 gap-4">
                       <div className="w-10 h-10 rounded-xl bg-vibrant-blue flex items-center justify-center text-white">
@@ -237,6 +414,283 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Integrated Forms Section */}
+      <section id="form-mandiri" className="py-32 bg-playful-50/50 relative overflow-hidden">
+        {/* Notification Toast */}
+        <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[100] w-full max-w-xl px-4 pointer-events-none">
+          <AnimatePresence>
+            {notification && (
+              <motion.div
+                initial={{ opacity: 0, y: -50 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -50 }}
+                className={cn(
+                  "p-6 rounded-[2rem] border-4 flex items-center gap-4 font-black text-sm uppercase tracking-widest shadow-2xl pointer-events-auto backdrop-blur-md",
+                  notification.type === 'success' ? "bg-vibrant-purple text-white" : "bg-red-500 text-white"
+                )}
+              >
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white shadow-md">
+                  <Check size={20} />
+                </div>
+                {notification.message}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        <div className="max-w-5xl mx-auto px-4 relative z-10">
+          <div className="text-center mb-16">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-vibrant-purple/10 border border-vibrant-purple/20 text-vibrant-purple text-[10px] font-black uppercase tracking-[0.4em] mb-6"
+            >
+              <FileText size={12} />
+              SELF SERVICE PORTAL
+            </motion.div>
+            <h2 className="text-5xl md:text-6xl font-black text-gray-900 tracking-tighter uppercase leading-none">
+              FORMULIR <br />
+              <span className="text-vibrant-purple">PENGINPUTAN</span> MANDIRI
+            </h2>
+            <p className="mt-6 text-gray-500 font-bold max-w-xl mx-auto">
+              Silakan pilih kategori formulir sesuai keperluan Anda. Data akan langsung terkirim ke sistem resepsionis kami.
+            </p>
+          </div>
+
+          <div className="bg-white rounded-[3rem] shadow-2xl border-8 border-white overflow-hidden">
+            {/* Tab Switcher */}
+            <div className="grid grid-cols-2 p-2 bg-playful-50">
+              <button 
+                onClick={() => setActiveForm('visit')}
+                className={cn(
+                  "py-6 rounded-[2.5rem] font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-3",
+                  activeForm === 'visit' 
+                    ? "bg-vibrant-blue text-white shadow-xl shadow-vibrant-blue/20" 
+                    : "text-gray-400 hover:text-vibrant-blue"
+                )}
+              >
+                <Users size={18} />
+                Input Kunjungan
+              </button>
+              <button 
+                onClick={() => setActiveForm('appointment')}
+                className={cn(
+                  "py-6 rounded-[2.5rem] font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-3",
+                  activeForm === 'appointment' 
+                    ? "bg-vibrant-purple text-white shadow-xl shadow-vibrant-purple/20" 
+                    : "text-gray-400 hover:text-vibrant-purple"
+                )}
+              >
+                <Calendar size={18} />
+                Input Janji Temu
+              </button>
+            </div>
+
+            <div className="p-8 md:p-12">
+              <AnimatePresence mode="wait">
+                {activeForm === 'visit' ? (
+                  <motion.div
+                    key="visit-form"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    id="input-kunjungan"
+                  >
+                    {!visitSuccess ? (
+                      <form onSubmit={handleVisitSubmit} className="space-y-8">
+                        <div className="grid md:grid-cols-2 gap-8">
+                          <div className="space-y-3">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Asal Instansi</label>
+                            <input 
+                              type="text" required
+                              className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-blue/10 rounded-[2rem] outline-none transition-all font-bold text-gray-900 text-sm"
+                              placeholder="Nama Sekolah/Dinas"
+                              value={visitData.organization}
+                              onChange={(e) => setVisitData({...visitData, organization: e.target.value})}
+                            />
+                          </div>
+                          <div className="space-y-3">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Nama Perwakilan</label>
+                            <input 
+                              type="text" required
+                              className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-blue/10 rounded-[2rem] outline-none transition-all font-bold text-gray-900 text-sm"
+                              placeholder="Nama Lengkap"
+                              value={visitData.visitor_name}
+                              onChange={(e) => setVisitData({...visitData, visitor_name: e.target.value})}
+                            />
+                          </div>
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-8">
+                          <div className="space-y-3">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Bidang yang dituju</label>
+                            <select 
+                              required
+                              className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-blue/10 rounded-[2rem] outline-none transition-all font-black text-sm appearance-none"
+                              value={visitData.target_unit}
+                              onChange={(e) => setVisitData({...visitData, target_unit: e.target.value, target_person: ''})}
+                            >
+                              <option value="">-- PILIH UNIT --</option>
+                              <option value="Kepala Sekolah">Kepala Sekolah</option>
+                              <option value="Wakil Kepala Sekolah">Wakil Kepala Sekolah</option>
+                              <option value="Tata Usaha">Tata Usaha</option>
+                              <option value="Wali Kelas">Wali Kelas</option>
+                              <option value="Peserta Didik">Peserta Didik</option>
+                            </select>
+                          </div>
+                          <div className="space-y-3">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">WhatsApp</label>
+                            <input 
+                              type="tel" required
+                              className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-blue/10 rounded-[2rem] outline-none transition-all font-bold text-gray-900 text-sm"
+                              placeholder="08xxxxxxxx"
+                              value={visitData.phone}
+                              onChange={(e) => setVisitData({...visitData, phone: e.target.value})}
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Detail Keperluan</label>
+                          <textarea 
+                            required rows={3}
+                            className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-blue/10 rounded-[2rem] outline-none transition-all font-bold text-gray-900 text-sm"
+                            placeholder="Apa maksud kunjungan Anda?"
+                            value={visitData.purpose}
+                            onChange={(e) => setVisitData({...visitData, purpose: e.target.value})}
+                          ></textarea>
+                        </div>
+                        <button 
+                          type="submit" disabled={loading}
+                          className="w-full py-6 bg-vibrant-blue text-white rounded-[2rem] font-black uppercase tracking-[0.2em] shadow-xl hover:shadow-vibrant-blue/20 transition-all flex items-center justify-center gap-4"
+                        >
+                          {loading ? <div className="w-6 h-6 border-4 border-white/30 border-t-white rounded-full animate-spin"></div> : "Kirim Form Kunjungan"}
+                        </button>
+                      </form>
+                    ) : (
+                      <div className="text-center py-10 space-y-6">
+                        <div className="w-20 h-20 bg-vibrant-blue/10 text-vibrant-blue rounded-[2rem] flex items-center justify-center mx-auto">
+                          <Check size={40} />
+                        </div>
+                        <h3 className="text-3xl font-black text-gray-900 uppercase">Input Berhasil!</h3>
+                        <p className="text-gray-500 font-bold max-w-sm mx-auto">Terima kasih, data kunjungan resmi Anda sudah tercatat di meja resepsionis.</p>
+                        <button 
+                          onClick={() => setVisitSuccess(false)}
+                          className="px-10 py-4 bg-gray-100 text-gray-500 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-playful-100 transition-all"
+                        >
+                          ISI FORMULIR LAGI
+                        </button>
+                      </div>
+                    )}
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="appointment-form"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    id="input-janji-temu"
+                  >
+                    {!appointmentSuccess ? (
+                      <form onSubmit={handleAppointmentSubmit} className="space-y-8">
+                        <div className="grid md:grid-cols-2 gap-8">
+                          <div className="space-y-3">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Nama Lengkap</label>
+                            <input 
+                              type="text" required
+                              className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-purple/10 rounded-[2rem] outline-none transition-all font-bold text-gray-900 text-sm"
+                              placeholder="Nama Anda"
+                              value={appointmentData.guest_name}
+                              onChange={(e) => setAppointmentData({...appointmentData, guest_name: e.target.value})}
+                            />
+                          </div>
+                          <div className="space-y-3">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Pilih Guru/Staf</label>
+                            <select 
+                              required
+                              className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-purple/10 rounded-[2rem] outline-none transition-all font-black text-sm appearance-none"
+                              value={appointmentData.teacher_id}
+                              onChange={(e) => setAppointmentData({...appointmentData, teacher_id: e.target.value})}
+                            >
+                              <option value="">-- PILIH TUJUAN --</option>
+                              {appointmentPersonnel.map(p => (
+                                <option key={p.id} value={p.id}>{p.full_name} ({p.role})</option>
+                              ))}
+                              <option value="manual">-- LAINNYA / MANUAL --</option>
+                            </select>
+                          </div>
+                        </div>
+                        {(appointmentData.teacher_id === 'manual') && (
+                          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Ketik Nama Tujuan</label>
+                             <input 
+                              type="text" required
+                              className="w-full px-8 py-5 bg-playful-50 border-4 border-vibrant-purple/20 rounded-[2rem] outline-none transition-all font-bold text-gray-900 text-sm"
+                              placeholder="Ketik nama personil yang ingin ditemui"
+                              value={appointmentData.target_name}
+                              onChange={(e) => setAppointmentData({...appointmentData, target_name: e.target.value})}
+                            />
+                          </motion.div>
+                        )}
+                        <div className="grid md:grid-cols-2 gap-8">
+                          <div className="space-y-3">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Tanggal</label>
+                            <input 
+                              type="date" required
+                              className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-purple/10 rounded-[2rem] outline-none transition-all font-bold text-gray-900 text-sm"
+                              value={appointmentData.date}
+                              onChange={(e) => setAppointmentData({...appointmentData, date: e.target.value})}
+                            />
+                          </div>
+                          <div className="space-y-3">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Waktu</label>
+                            <input 
+                              type="time" required
+                              className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-purple/10 rounded-[2rem] outline-none transition-all font-bold text-gray-900 text-sm"
+                              value={appointmentData.time}
+                              onChange={(e) => setAppointmentData({...appointmentData, time: e.target.value})}
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Keperluan Pertemuan</label>
+                          <textarea 
+                            required rows={3}
+                            className="w-full px-8 py-5 bg-playful-50 border-4 border-transparent focus:border-vibrant-purple/10 rounded-[2rem] outline-none transition-all font-bold text-gray-900 text-sm"
+                            placeholder="Apa keperluan janji temu Anda?"
+                            value={appointmentData.purpose}
+                            onChange={(e) => setAppointmentData({...appointmentData, purpose: e.target.value})}
+                          ></textarea>
+                        </div>
+                        <button 
+                          type="submit" disabled={loading}
+                          className="w-full py-6 bg-vibrant-purple text-white rounded-[2rem] font-black uppercase tracking-[0.2em] shadow-xl hover:shadow-vibrant-purple/20 transition-all flex items-center justify-center gap-4"
+                        >
+                          {loading ? <div className="w-6 h-6 border-4 border-white/30 border-t-white rounded-full animate-spin"></div> : "Ajukan Janji Temu"}
+                        </button>
+                      </form>
+                    ) : (
+                      <div className="text-center py-10 space-y-6">
+                        <div className="w-20 h-20 bg-vibrant-purple/10 text-vibrant-purple rounded-[2rem] flex items-center justify-center mx-auto">
+                          <Check size={40} />
+                        </div>
+                        <h3 className="text-3xl font-black text-gray-900 uppercase">Permohonan Terkirim!</h3>
+                        <p className="text-gray-500 font-bold max-w-sm mx-auto">Janji temu Anda telah diajukan. Silakan tunggu konfirmasi saat tiba di sekolah.</p>
+                        <button 
+                          onClick={() => setAppointmentSuccess(false)}
+                          className="px-10 py-4 bg-gray-100 text-gray-500 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-playful-100 transition-all"
+                        >
+                          ISI FORMULIR LAGI
+                        </button>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Main Core Features Section */}
       <section className="py-32 bg-white relative overflow-hidden">
         <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#000 2px, transparent 0)', backgroundSize: '30px 30px' }}></div>
@@ -257,7 +711,10 @@ export default function LandingPage() {
                 bg: "bg-vibrant-purple/5",
                 border: "border-vibrant-purple/10",
                 number: "01",
-                link: "/public/appointment"
+                action: () => {
+                  setActiveForm('appointment');
+                  document.getElementById('form-mandiri')?.scrollIntoView({ behavior: 'smooth' });
+                }
               },
               {
                 title: "Input Kunjungan",
@@ -266,7 +723,10 @@ export default function LandingPage() {
                 bg: "bg-vibrant-blue/5",
                 border: "border-vibrant-blue/10",
                 number: "02",
-                link: "/public/visit"
+                action: () => {
+                  setActiveForm('visit');
+                  document.getElementById('form-mandiri')?.scrollIntoView({ behavior: 'smooth' });
+                }
               },
               {
                 title: "Titipan Barang / Surat",
@@ -294,31 +754,59 @@ export default function LandingPage() {
                 viewport={{ once: true }}
                 transition={{ delay: idx * 0.1 }}
               >
-                <Link
-                  to={item.link}
-                  className={cn(
-                    "p-10 rounded-[3rem] border-4 flex flex-col h-full items-start gap-8 group hover:shadow-2xl transition-all duration-500 bg-white block",
-                    item.border
-                  )}
-                >
-                  <div className="flex justify-between w-full items-start">
-                    <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center bg-white shadow-xl group-hover:scale-110 group-hover:rotate-6 transition-transform duration-500", item.bg)}>
-                      {item.icon}
+                {item.action ? (
+                  <button
+                    onClick={item.action}
+                    className={cn(
+                      "p-10 rounded-[3rem] border-4 flex flex-col h-full items-start gap-8 group hover:shadow-2xl transition-all duration-500 bg-white w-full text-left",
+                      item.border
+                    )}
+                  >
+                    <div className="flex justify-between w-full items-start">
+                      <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center bg-white shadow-xl group-hover:scale-110 group-hover:rotate-6 transition-transform duration-500", item.bg)}>
+                        {item.icon}
+                      </div>
+                      <span className="text-4xl font-black text-gray-100 group-hover:text-gray-200 transition-colors uppercase italic">{item.number}</span>
                     </div>
-                    <span className="text-4xl font-black text-gray-100 group-hover:text-gray-200 transition-colors uppercase italic">{item.number}</span>
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-black text-gray-900 mb-4 tracking-tight uppercase group-hover:text-vibrant-purple transition-colors">{item.title}</h3>
-                    <p className="text-gray-500 font-bold leading-relaxed">{item.desc}</p>
-                  </div>
-                  <div className="mt-auto pt-6 border-t border-gray-50 w-full flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                       <div className="w-1.5 h-1.5 rounded-full bg-vibrant-purple"></div>
-                       <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Ready to assist</span>
+                    <div>
+                      <h3 className="text-2xl font-black text-gray-900 mb-4 tracking-tight uppercase group-hover:text-vibrant-purple transition-colors">{item.title}</h3>
+                      <p className="text-gray-500 font-bold leading-relaxed">{item.desc}</p>
                     </div>
-                    <ArrowRight size={16} className="text-gray-300 group-hover:text-vibrant-purple group-hover:translate-x-1 transition-all" />
-                  </div>
-                </Link>
+                    <div className="mt-auto pt-6 border-t border-gray-50 w-full flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                         <div className="w-1.5 h-1.5 rounded-full bg-vibrant-purple"></div>
+                         <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Ready to assist</span>
+                      </div>
+                      <ArrowRight size={16} className="text-gray-300 group-hover:text-vibrant-purple group-hover:translate-x-1 transition-all" />
+                    </div>
+                  </button>
+                ) : (
+                  <Link
+                    to={item.link!}
+                    className={cn(
+                      "p-10 rounded-[3rem] border-4 flex flex-col h-full items-start gap-8 group hover:shadow-2xl transition-all duration-500 bg-white block text-left",
+                      item.border
+                    )}
+                  >
+                    <div className="flex justify-between w-full items-start">
+                      <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center bg-white shadow-xl group-hover:scale-110 group-hover:rotate-6 transition-transform duration-500", item.bg)}>
+                        {item.icon}
+                      </div>
+                      <span className="text-4xl font-black text-gray-100 group-hover:text-gray-200 transition-colors uppercase italic">{item.number}</span>
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-black text-gray-900 mb-4 tracking-tight uppercase group-hover:text-vibrant-pink transition-colors">{item.title}</h3>
+                      <p className="text-gray-500 font-bold leading-relaxed">{item.desc}</p>
+                    </div>
+                    <div className="mt-auto pt-6 border-t border-gray-50 w-full flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                         <div className="w-1.5 h-1.5 rounded-full bg-vibrant-purple"></div>
+                         <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Staff Access Only</span>
+                      </div>
+                      <ArrowRight size={16} className="text-gray-300 group-hover:text-vibrant-purple group-hover:translate-x-1 transition-all" />
+                    </div>
+                  </Link>
+                )}
               </motion.div>
             ))}
           </div>

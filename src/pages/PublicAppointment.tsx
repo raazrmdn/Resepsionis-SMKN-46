@@ -6,6 +6,8 @@ import { supabase, type Profile } from '../lib/supabase';
 import { useAuth } from '../AuthContext';
 import { cn } from '../lib/utils';
 
+import { APPOINTMENT_CLASSES as CLASSES } from '../constants';
+
 export default function PublicAppointment() {
   const { profile } = useAuth();
   const [personnel, setPersonnel] = useState<Profile[]>([]);
@@ -26,12 +28,6 @@ export default function PublicAppointment() {
     time: '',
     purpose: ''
   });
-
-  const CLASSES = [
-    'X AKL 1', 'X AKL 2', 'X MPLB 1', 'X MPLB 2', 'X BR 1', 'X BR 2', 'X DKV', 'X PPLG',
-    'XI AKL 1', 'XI AKL 2', 'XI MPLB', 'XI BR 1', 'XI BR 2', 'XI DKV', 'XI PPLG 1', 'XI PPLG 2',
-    'XII AKL 1', 'XII AKL 2', 'XII MP 1', 'XII MP 2', 'XII BR 1', 'XII BR 2', 'XII DKV', 'XII PPLG'
-  ];
 
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 

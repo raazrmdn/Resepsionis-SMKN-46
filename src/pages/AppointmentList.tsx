@@ -18,13 +18,16 @@ import {
   RotateCcw,
   Eye,
   Building2,
-  Phone
+  Phone,
+  FileDown
 } from 'lucide-react';
 import { supabase, type Appointment } from '../lib/supabase';
 import { useAuth } from '../AuthContext';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export default function AppointmentList() {
   const { profile } = useAuth();
@@ -170,6 +173,53 @@ export default function AppointmentList() {
     }
   }
 
+  const exportToPDF = () => {
+    if (filtered.length === 0) {
+      setNotification({ type: 'error', message: 'Tidak ada data untuk diekspor' });
+      return;
+    }
+
+    const doc = new jsPDF();
+    const title = activeTab === 'appointments' ? 'DAFTAR JANJI TEMU' : 'DAFTAR KUNJUNGAN RESMI';
+    
+    // Header
+    doc.setFontSize(18);
+    doc.text(`SMKN 46 JAKARTA - ${title}`, 14, 20);
+    doc.setFontSize(10);
+    doc.text(`Tanggal Cetak: ${format(new Date(), 'dd MMMM yyyy HH:mm', { locale: id })}`, 14, 28);
+    doc.text(`Dicetak oleh: ${profile?.full_name || 'Anonymous'}`, 14, 34);
+
+    const tableData = filtered.map((apt) => [
+      apt.guest_name,
+      (apt as any).organization || 'UMUM',
+      apt.purpose,
+      apt.date ? format(new Date(apt.date), 'dd/MM/yyyy') : '-',
+      apt.time || '-',
+      apt.status.toUpperCase()
+    ]);
+
+    autoTable(doc, {
+      startY: 45,
+      head: [['Nama Tamu', 'Instansi', 'Keperluan', 'Tanggal', 'Waktu', 'Status']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: { fillColor: [124, 58, 237], textColor: [255, 255, 255], fontStyle: 'bold' },
+      styles: { fontSize: 7, cellPadding: 2 },
+      columnStyles: {
+        0: { cellWidth: 30 },
+        1: { cellWidth: 30 },
+        2: { cellWidth: 70 },
+        3: { cellWidth: 20 },
+        4: { cellWidth: 15 },
+        5: { cellWidth: 20 }
+      }
+    });
+
+    const fileName = `laporan_${activeTab}_${format(new Date(), 'yyyyMMdd')}.pdf`;
+    doc.save(fileName);
+    setNotification({ type: 'success', message: 'Laporan berhasil diekspor ke PDF' });
+  };
+
   const filtered = appointments.filter(apt => {
     // 1. Filter by Tab (Appointment vs Visit)
     const isVisit = apt.purpose?.includes('[KUNJUNGAN RESMI');
@@ -209,26 +259,26 @@ export default function AppointmentList() {
   };
 
   return (
-    <div className="space-y-10">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-4xl font-black text-gray-900 tracking-tight uppercase">
+    <div className="space-y-8 md:space-y-12">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 md:gap-8">
+        <div className="max-w-xl">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-gray-900 tracking-tight uppercase leading-tight sm:leading-none">
             {activeTab === 'appointments' ? 'Daftar' : 'Daftar'} <span className="text-vibrant-purple">{activeTab === 'appointments' ? 'Janji Temu' : 'Kunjungan'}</span>
           </h1>
-          <p className="text-gray-500 font-bold mt-1">
+          <p className="text-gray-500 font-bold mt-2 text-xs sm:text-sm md:text-base">
             {profile?.role === 'teacher' 
               ? 'Kelola jadwal tamu yang ingin bertemu dengan Anda.' 
               : `Pantau semua daftar ${activeTab === 'appointments' ? 'janji temu' : 'kunjungan resmi'} di sistem.`}
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4">
-          {/* Tab Switcher */}
-          <div className="flex bg-playful-100 p-1.5 rounded-2xl">
+        <div className="flex flex-col gap-4 w-full lg:w-auto">
+          {/* Tab Switcher - Now Full Width on Mobile */}
+          <div className="flex bg-playful-100 p-1 rounded-2xl w-full">
             <button
               onClick={() => setActiveTab('appointments')}
               className={cn(
-                "px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all",
+                "flex-1 px-4 sm:px-6 py-2.5 rounded-xl font-black text-[10px] sm:text-xs uppercase tracking-widest transition-all",
                 activeTab === 'appointments' 
                   ? "bg-white text-vibrant-purple shadow-sm" 
                   : "text-gray-400 hover:text-gray-600"
@@ -239,7 +289,7 @@ export default function AppointmentList() {
             <button
               onClick={() => setActiveTab('visits')}
               className={cn(
-                "px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all",
+                "flex-1 px-4 sm:px-6 py-2.5 rounded-xl font-black text-[10px] sm:text-xs uppercase tracking-widest transition-all",
                 activeTab === 'visits' 
                   ? "bg-white text-vibrant-purple shadow-sm" 
                   : "text-gray-400 hover:text-gray-600"
@@ -249,32 +299,41 @@ export default function AppointmentList() {
             </button>
           </div>
 
-          <button
-            onClick={() => {
-              setLoading(true);
-              fetchAppointments();
-            }}
-            disabled={loading}
-            className="flex items-center gap-2 bg-white p-3 rounded-2xl shadow-sm border-4 border-playful-100 hover:bg-playful-50 transition-all active:scale-95 disabled:opacity-50"
-            title="Refresh Data"
-          >
-            <RotateCcw size={18} className={cn("text-vibrant-purple", loading && "animate-spin")} />
-          </button>
-
-          <div className="flex items-center gap-4 bg-white p-2 rounded-2xl shadow-sm border-4 border-playful-100">
-            <Filter size={18} className="text-vibrant-purple ml-2" />
-            <select 
-              className="bg-transparent border-none outline-none font-bold text-sm text-gray-700 pr-4"
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <button 
+              onClick={exportToPDF}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white border-2 border-vibrant-purple text-vibrant-purple rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-vibrant-purple hover:text-white transition-all active:scale-95 whitespace-nowrap"
             >
-              <option value="all">Semua Status</option>
-              <option value="pending">Menunggu</option>
-              <option value="confirmed">Disetujui</option>
-              <option value="rejected">Ditolak</option>
-              <option value="rescheduled">Reschedule</option>
-              <option value="completed">Selesai</option>
-            </select>
+              <FileDown size={14} /> Export PDF
+            </button>
+            
+            <button
+              onClick={() => {
+                setLoading(true);
+                fetchAppointments();
+              }}
+              disabled={loading}
+              className="p-2.5 bg-white rounded-xl shadow-sm border-2 border-playful-100 hover:bg-playful-50 transition-all active:scale-95 disabled:opacity-50"
+              title="Refresh Data"
+            >
+              <RotateCcw size={18} className={cn("text-vibrant-purple", loading && "animate-spin")} />
+            </button>
+
+            <div className="flex-1 sm:flex-none flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl shadow-sm border-2 border-playful-100 max-w-[150px] sm:max-w-none group">
+              <Filter size={14} className="text-vibrant-purple shrink-0" />
+              <select 
+                className="bg-transparent border-none outline-none font-bold text-[10px] text-gray-700 w-full cursor-pointer"
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+              >
+                <option value="all">Status</option>
+                <option value="pending">Menunggu</option>
+                <option value="confirmed">Disetujui</option>
+                <option value="rejected">Ditolak</option>
+                <option value="rescheduled">Reschedule</option>
+                <option value="completed">Selesai</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -322,40 +381,37 @@ export default function AppointmentList() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="bg-white p-8 rounded-[2.5rem] shadow-xl border-4 border-playful-200 group relative overflow-hidden"
+              className="bg-white p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] shadow-xl border-4 border-playful-200 group relative overflow-hidden h-full flex flex-col"
             >
-              <div className="flex justify-between items-start mb-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-gradient-to-br from-vibrant-blue to-vibrant-purple text-white rounded-2xl flex items-center justify-center font-black text-xl shadow-lg group-hover:rotate-6 transition-transform">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-vibrant-blue to-vibrant-purple text-white rounded-xl sm:rounded-2xl flex items-center justify-center font-black text-lg sm:text-xl shadow-lg group-hover:rotate-6 transition-transform shrink-0">
                     {apt.guest_name.charAt(0)}
                   </div>
-                  <div>
-                    <h3 className="text-xl font-black text-gray-900 tracking-tight">{apt.guest_name}</h3>
+                  <div className="min-w-0">
+                    <h3 className="text-lg sm:text-xl font-black text-gray-900 tracking-tight truncate">{apt.guest_name}</h3>
                     <div className="flex gap-2 items-center">
-                      <p className="text-[10px] text-vibrant-purple font-black uppercase tracking-widest">
+                      <p className="text-[9px] sm:text-[10px] text-vibrant-purple font-black uppercase tracking-widest truncate">
                         {(apt as any).organization || 'UMUM'}
-                      </p>
-                      <span className="text-gray-300 text-[10px]">•</span>
-                      <p className="text-[10px] text-gray-400 font-bold">
-                        {(apt as any).phone || '-'}
                       </p>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
                   <div className={cn(
-                    "flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border-2",
+                    "flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest border-2",
                     getStatusColor(apt.status, apt.purpose)
                   )}>
                     {getStatusIcon(apt.status, apt.purpose)}
-                    {apt.purpose.includes('[SELESAI]') ? 'Selesai' :
-                     apt.status === 'pending' ? 'Menunggu' : 
-                     apt.status === 'confirmed' ? 'Disetujui' :
-                     apt.status === 'completed' ? 'Selesai' : 
-                     apt.status}
+                    <span className="truncate">
+                      {apt.purpose.includes('[SELESAI]') ? 'Selesai' :
+                       apt.status === 'pending' ? 'Tunggu' : 
+                       apt.status === 'confirmed' ? 'Setuju' :
+                       apt.status === 'completed' ? 'Selesai' : 
+                       apt.status}
+                    </span>
                   </div>
                   
-                  {/* Detail Button */}
                   <button 
                     onClick={() => setSelectedApt(apt)}
                     className="p-2 text-vibrant-purple hover:bg-vibrant-purple/5 rounded-xl transition-all"
@@ -366,29 +422,31 @@ export default function AppointmentList() {
                 </div>
               </div>
 
-              <div className="space-y-4 mb-8">
-                <div className="flex items-center gap-4 text-gray-600">
-                  <div className="w-10 h-10 bg-playful-50 rounded-xl flex items-center justify-center text-vibrant-blue">
-                    <Calendar size={18} />
+              <div className="space-y-4 mb-6 flex-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="flex items-center gap-3 text-gray-600">
+                    <div className="w-9 h-9 bg-playful-50 rounded-lg flex items-center justify-center text-vibrant-blue shrink-0">
+                      <Calendar size={16} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest">Jadwal</p>
+                      <p className="text-xs sm:text-sm font-bold truncate">{apt.date ? format(new Date(apt.date), 'dd MMM yyyy', { locale: id }) : '???'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Jadwal</p>
-                    <p className="font-bold">{apt.date ? format(new Date(apt.date), 'EEEE, dd MMM yyyy', { locale: id }) : 'Belum ditentukan'}</p>
+                  <div className="flex items-center gap-3 text-gray-600">
+                    <div className="w-9 h-9 bg-playful-50 rounded-lg flex items-center justify-center text-vibrant-pink shrink-0">
+                      <Clock size={16} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest">Waktu</p>
+                      <p className="text-xs sm:text-sm font-bold">{apt.time || '-'} WIB</p>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-4 text-gray-600">
-                  <div className="w-10 h-10 bg-playful-50 rounded-xl flex items-center justify-center text-vibrant-pink">
-                    <Clock size={18} />
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Waktu</p>
-                    <p className="font-bold">{apt.time || '-'} WIB</p>
-                  </div>
-                </div>
-                <div className="bg-playful-50/50 p-6 rounded-2xl border-2 border-white relative">
-                  <MessageSquare size={16} className="absolute right-4 top-4 text-gray-300" />
-                  <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-2">Keperluan</p>
-                  <p className="text-sm font-medium text-gray-700 leading-relaxed italic line-clamp-3">
+                <div className="bg-playful-50/50 p-4 sm:p-5 rounded-xl sm:rounded-2xl border-2 border-white relative min-h-[80px]">
+                  <MessageSquare size={14} className="absolute right-3 top-3 text-gray-300 opacity-30" />
+                  <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-1 sm:mb-2">Keperluan</p>
+                  <p className="text-xs font-semibold text-gray-700 leading-relaxed line-clamp-2">
                     {apt.purpose}
                   </p>
                 </div>
@@ -522,75 +580,72 @@ export default function AppointmentList() {
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               className="relative w-full max-w-xl bg-white rounded-[3rem] shadow-2xl overflow-hidden border-8 border-white"
             >
-              <div className={cn(
-                "p-10 text-white relative",
-                activeTab === 'appointments' ? "bg-gradient-to-br from-vibrant-purple to-vibrant-pink" : "bg-gradient-to-br from-vibrant-blue to-vibrant-purple"
-              )}>
+              <div className="p-6 sm:p-10 text-white relative">
                 <button 
                   onClick={() => setSelectedApt(null)}
-                  className="absolute top-8 right-8 p-3 h-12 w-12 bg-white/20 hover:bg-white/30 rounded-2xl flex items-center justify-center transition-all"
+                  className="absolute top-4 right-4 sm:top-8 sm:right-8 p-3 h-10 w-10 sm:h-12 sm:w-12 bg-white/20 hover:bg-white/30 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all"
                 >
-                  <X size={24} />
+                  <X size={20} />
                 </button>
-                <div className="flex items-center gap-6">
-                  <div className="w-24 h-24 bg-white text-gray-900 rounded-[2.5rem] flex items-center justify-center font-black text-4xl shadow-xl">
+                <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 sm:gap-6 text-center sm:text-left">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 bg-white text-gray-900 rounded-[2rem] sm:rounded-[2.5rem] flex items-center justify-center font-black text-3xl sm:text-4xl shadow-xl">
                     {selectedApt.guest_name.charAt(0)}
                   </div>
                   <div>
-                    <p className="text-xs font-black uppercase tracking-[0.4em] opacity-80 mb-2">Detail {activeTab === 'appointments' ? 'Janji Temu' : 'Kunjungan'}</p>
-                    <h2 className="text-4xl font-black tracking-tighter leading-none">{selectedApt.guest_name}</h2>
-                    <p className="font-bold text-white/90 mt-2 text-lg">{(selectedApt as any).organization || 'Masyarakat Umum'}</p>
+                    <p className="text-[9px] sm:text-xs font-black uppercase tracking-[0.4em] opacity-80 mb-1 sm:mb-2">Detail Data</p>
+                    <h2 className="text-2xl sm:text-4xl font-black tracking-tighter leading-tight">{selectedApt.guest_name}</h2>
+                    <p className="font-bold text-white/90 mt-1 sm:mt-2 text-sm sm:text-lg truncate">{(selectedApt as any).organization || 'Masyarakat Umum'}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="p-10 space-y-8 max-h-[60vh] overflow-y-auto">
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="p-6 bg-gray-50 rounded-3xl border-2 border-slate-100">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Jadwal</p>
-                    <p className="font-bold text-gray-900">{selectedApt.date ? format(new Date(selectedApt.date), 'EEEE, dd MMM yyyy', { locale: id }) : '-'}</p>
+              <div className="p-6 sm:p-10 space-y-6 sm:space-y-8 max-h-[50vh] sm:max-h-[60vh] overflow-y-auto">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="p-5 sm:p-6 bg-gray-50 rounded-2xl sm:rounded-3xl border-2 border-slate-100">
+                    <p className="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 sm:mb-2">Jadwal</p>
+                    <p className="text-sm sm:text-base font-bold text-gray-900">{selectedApt.date ? format(new Date(selectedApt.date), 'EEEE, dd MMM yyyy', { locale: id }) : '-'}</p>
                   </div>
-                  <div className="p-6 bg-gray-50 rounded-3xl border-2 border-slate-100">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Waktu</p>
-                    <p className="font-bold text-gray-900">{selectedApt.time || '-'} WIB</p>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl border-2 border-slate-100">
-                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-vibrant-purple shadow-sm">
-                      <Phone size={18} />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Nomor Telepon</p>
-                      <p className="font-bold text-gray-900">{(selectedApt as any).phone || '-'}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl border-2 border-slate-100">
-                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-vibrant-blue shadow-sm">
-                      <User size={18} />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Tujuan Unit/Bidang</p>
-                      <p className="font-bold text-gray-900">{(selectedApt as any).target_unit || '-'}</p>
-                    </div>
+                  <div className="p-5 sm:p-6 bg-gray-50 rounded-2xl sm:rounded-3xl border-2 border-slate-100">
+                    <p className="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 sm:mb-2">Waktu</p>
+                    <p className="text-sm sm:text-base font-bold text-gray-900">{selectedApt.time || '-'} WIB</p>
                   </div>
                 </div>
 
-                <div className="p-8 bg-playful-50 rounded-3xl border-2 border-white shadow-inner">
-                  <div className="flex items-center gap-2 mb-4">
-                    <MessageSquare size={16} className="text-vibrant-purple" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-3 sm:gap-4 p-4 bg-gray-50 rounded-xl sm:rounded-2xl border-2 border-slate-100">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white rounded-lg sm:rounded-xl flex items-center justify-center text-vibrant-purple shadow-sm shrink-0">
+                      <Phone size={16} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest">Nomor Telepon</p>
+                      <p className="text-xs sm:text-sm font-bold text-gray-900 truncate">{(selectedApt as any).phone || '-'}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 sm:gap-4 p-4 bg-gray-50 rounded-xl sm:rounded-2xl border-2 border-slate-100">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white rounded-lg sm:rounded-xl flex items-center justify-center text-vibrant-blue shadow-sm shrink-0">
+                      <User size={16} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest">Tujuan</p>
+                      <p className="text-xs sm:text-sm font-bold text-gray-900 truncate">{(selectedApt as any).target_unit || '-'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-6 sm:p-8 bg-playful-50 rounded-2xl sm:rounded-3xl border-2 border-white shadow-inner">
+                  <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                    <MessageSquare size={14} className="text-vibrant-purple" />
                     <p className="text-[10px] font-black text-vibrant-purple uppercase tracking-widest">Keperluan</p>
                   </div>
-                  <p className="text-gray-700 font-bold leading-relaxed whitespace-pre-wrap">
+                  <p className="text-xs sm:text-sm text-gray-700 font-bold leading-relaxed whitespace-pre-wrap">
                     {selectedApt.purpose}
                   </p>
                 </div>
               </div>
 
-              <div className="p-10 bg-gray-50 flex items-center justify-between border-t border-gray-100">
+              <div className="p-6 sm:p-10 bg-gray-50 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-100">
                 <div className={cn(
-                  "flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest border-4",
+                  "w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border-4",
                   getStatusColor(selectedApt.status, selectedApt.purpose)
                 )}>
                   {getStatusIcon(selectedApt.status, selectedApt.purpose)}
@@ -598,9 +653,9 @@ export default function AppointmentList() {
                 </div>
                 <button 
                   onClick={() => setSelectedApt(null)}
-                  className="px-10 py-4 bg-gray-900 text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-gray-800 transition-all active:scale-95 shadow-xl"
+                  className="w-full sm:w-auto px-8 py-3 bg-gray-900 text-white font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-gray-800 transition-all active:scale-95 shadow-lg"
                 >
-                  Tutup Data
+                  Tutup
                 </button>
               </div>
             </motion.div>

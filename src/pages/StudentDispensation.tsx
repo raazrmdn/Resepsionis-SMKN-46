@@ -3,13 +3,15 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Users, UserCircle, MessageSquare, Check, X, AlertCircle, 
   Search, Sparkles, School, Calendar, Clock, ArrowRight,
-  GraduationCap, FileCheck, LogOut, ArrowLeftRight, UserCheck
+  GraduationCap, FileCheck, LogOut, ArrowLeftRight, UserCheck, FileDown
 } from 'lucide-react';
 import { supabase, type StudentDispensation } from '../lib/supabase';
 import { useAuth } from '../AuthContext';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const CLASS_LIST = [
   "X AK-1", "X AK-2", "X MP-1", "X MP-2", "X BR", "X DKV", "X PPLG",
@@ -29,8 +31,10 @@ export default function StudentDispensationPage() {
   const [formData, setFormData] = useState({
     student_name: '',
     student_class: '',
+    lesson_hour: '',
     reason: '',
-    granting_teacher: '',
+    wali_kelas: '',
+    piket_teacher: '',
     dispensation_type: 'back_to_school' as 'back_to_school' | 'go_home'
   });
 
@@ -98,8 +102,10 @@ export default function StudentDispensationPage() {
       setFormData({
         student_name: '',
         student_class: '',
+        lesson_hour: '',
         reason: '',
-        granting_teacher: '',
+        wali_kelas: '',
+        piket_teacher: '',
         dispensation_type: 'back_to_school'
       });
       fetchHistory();
@@ -125,6 +131,58 @@ export default function StudentDispensationPage() {
     }
   };
 
+  const exportToPDF = () => {
+    if (history.length === 0) {
+      setNotification({ type: 'error', message: 'Tidak ada data untuk diekspor' });
+      return;
+    }
+
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFontSize(18);
+    doc.text('SMKN 46 JAKARTA - LOG DISPENSASI SISWA', 14, 20);
+    doc.setFontSize(10);
+    doc.text(`Tanggal Cetak: ${format(new Date(), 'dd MMMM yyyy HH:mm', { locale: id })}`, 14, 28);
+    doc.text(`Dicetak oleh: ${profile?.full_name || 'Anonymous'}`, 14, 34);
+
+    const tableData = history.map((item) => [
+      item.student_name,
+      item.student_class,
+      item.lesson_hour || '-',
+      item.reason,
+      item.wali_kelas || '-',
+      item.piket_teacher || '-',
+      getStatusLabel(item.status),
+      format(new Date(item.created_at), 'HH:mm'),
+      item.updated_at && item.status === 'returned' ? format(new Date(item.updated_at), 'HH:mm') : '-'
+    ]);
+
+    autoTable(doc, {
+      startY: 45,
+      head: [['Nama Siswa', 'Kelas', 'JP Ke-', 'Alasan', 'Wali Kelas', 'Guru Piket', 'Status', 'Keluar', 'Kembali']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: { fillColor: [124, 58, 237], textColor: [255, 255, 255], fontStyle: 'bold' }, // Vibrant Purple
+      styles: { fontSize: 7, cellPadding: 2 },
+      columnStyles: {
+        0: { cellWidth: 25 },
+        1: { cellWidth: 15 },
+        2: { cellWidth: 15 },
+        3: { cellWidth: 40 },
+        4: { cellWidth: 25 },
+        5: { cellWidth: 25 },
+        6: { cellWidth: 15 },
+        7: { cellWidth: 15 },
+        8: { cellWidth: 15 }
+      }
+    });
+
+    const fileName = `log_dispensasi_${format(new Date(), 'yyyyMMdd')}.pdf`;
+    doc.save(fileName);
+    setNotification({ type: 'success', message: 'Log dispensasi berhasil diekspor ke PDF' });
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'out': return 'bg-amber-100 text-amber-600 border-amber-200';
@@ -146,35 +204,45 @@ export default function StudentDispensationPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-10">
       {/* Header */}
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 md:gap-8">
         <motion.div 
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
+          className="max-w-2xl"
         >
           <div className="flex items-center gap-3 text-vibrant-purple mb-2">
-            <div className="w-10 h-10 bg-vibrant-purple/10 rounded-xl flex items-center justify-center">
-              <LogOut size={24} />
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-vibrant-purple/10 rounded-xl flex items-center justify-center">
+              <LogOut size={20} />
             </div>
-            <span className="text-xs font-black uppercase tracking-[0.3em]">Student Portal</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.3em]">Student Portal</span>
           </div>
-          <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tighter uppercase leading-none">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-gray-900 tracking-tighter uppercase leading-tight sm:leading-none">
             Dispensasi <span className="text-vibrant-purple">Siswa</span>
           </h1>
-          <p className="text-gray-500 font-bold mt-4 max-w-lg">
+          <p className="text-gray-500 font-bold mt-3 text-xs sm:text-sm md:text-base">
             Pencatatan izin keluar sekolah untuk menjaga keamanan dan ketertiban lingkungan SMKN 46.
           </p>
         </motion.div>
 
-        {/* Quick Stats */}
-        <div className="flex gap-4">
-          <div className="px-6 py-4 bg-white border-2 border-gray-100 rounded-3xl shadow-sm">
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Hari Ini</p>
-            <p className="text-2xl font-black text-gray-900">{history.length}</p>
+        <div className="flex flex-col sm:flex-row flex-wrap items-center gap-4 w-full lg:w-auto">
+          <div className="flex gap-3 w-full sm:w-auto">
+            <div className="flex-1 sm:flex-none px-4 sm:px-6 py-3 sm:py-4 bg-white border-2 border-gray-100 rounded-2xl shadow-sm text-center sm:text-left">
+              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Total</p>
+              <p className="text-xl sm:text-2xl font-black text-gray-900">{history.length}</p>
+            </div>
+            <div className="flex-1 sm:flex-none px-4 sm:px-6 py-3 sm:py-4 bg-white border-2 border-amber-100 rounded-2xl shadow-sm text-center sm:text-left">
+              <p className="text-[9px] font-black text-amber-400 uppercase tracking-widest mb-1">Di Luar</p>
+              <p className="text-xl sm:text-2xl font-black text-amber-500">{stats.out}</p>
+            </div>
           </div>
-          <div className="px-6 py-4 bg-white border-2 border-amber-100 rounded-3xl shadow-sm">
-            <p className="text-[10px] font-black text-amber-400 uppercase tracking-widest mb-1">Di Luar</p>
-            <p className="text-2xl font-black text-amber-500">{stats.out}</p>
-          </div>
+          
+          <button 
+            onClick={exportToPDF}
+            className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 sm:px-8 py-3 sm:py-4 bg-white border-2 border-vibrant-purple text-vibrant-purple rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-vibrant-purple hover:text-white shadow-xl shadow-vibrant-purple/10 transition-all active:scale-95 whitespace-nowrap lg:ml-2"
+          >
+            <FileDown size={18} />
+            Export PDF
+          </button>
         </div>
       </header>
 
@@ -196,57 +264,86 @@ export default function StudentDispensationPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-6">
-              {/* Nama Siswa */}
-              <div className="space-y-3">
-                <label className="flex items-center gap-2 text-[10px] font-black text-gray-700 uppercase tracking-[0.2em]">
-                  <UserCircle size={14} className="text-vibrant-purple" />
-                  Nama Siswa
-                </label>
-                <input 
-                  type="text" required
-                  className="w-full px-6 py-4 bg-playful-50 border-4 border-transparent focus:border-vibrant-purple/10 rounded-[1.5rem] outline-none transition-all font-bold text-gray-900 placeholder:text-gray-300 text-sm"
-                  placeholder="Nama Lengkap Siswa"
-                  value={formData.student_name}
-                  onChange={(e) => setFormData({...formData, student_name: e.target.value})}
-                />
-              </div>
+               {/* Nama Siswa */}
+               <div className="space-y-3">
+                 <label className="flex items-center gap-2 text-[10px] font-black text-gray-700 uppercase tracking-[0.2em]">
+                   <UserCircle size={14} className="text-vibrant-purple" />
+                   Nama Siswa
+                 </label>
+                 <input 
+                   type="text" required
+                   className="w-full px-6 py-4 bg-playful-50 border-4 border-transparent focus:border-vibrant-purple/10 rounded-[1.5rem] outline-none transition-all font-bold text-gray-900 placeholder:text-gray-300 text-sm"
+                   placeholder="Nama Lengkap Siswa"
+                   value={formData.student_name}
+                   onChange={(e) => setFormData({...formData, student_name: e.target.value})}
+                 />
+               </div>
 
-              {/* Kelas & Alasan */}
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-3">
-                  <label className="flex items-center gap-2 text-[10px] font-black text-gray-700 uppercase tracking-[0.2em]">
-                    <GraduationCap size={14} className="text-vibrant-purple" />
-                    Kelas
-                  </label>
-                  <select 
-                    required
-                    className={cn(
-                      "w-full px-6 py-4 bg-playful-50 border-4 border-transparent focus:border-vibrant-purple/10 rounded-[1.5rem] outline-none transition-all font-black appearance-none text-sm",
-                      formData.student_class === "" ? "text-gray-300" : "text-gray-900"
-                    )}
-                    value={formData.student_class}
-                    onChange={(e) => setFormData({...formData, student_class: e.target.value})}
-                  >
-                    <option value="" className="text-gray-300">KELAS</option>
-                    {CLASS_LIST.map((cls) => (
-                      <option key={cls} value={cls} className="text-gray-900">{cls}</option>
-                    ))}
-                  </select>
+               <div className="grid md:grid-cols-2 gap-4">
+                 <div className="space-y-3">
+                   <label className="flex items-center gap-2 text-[10px] font-black text-gray-700 uppercase tracking-[0.2em]">
+                     <GraduationCap size={14} className="text-vibrant-purple" />
+                     Kelas
+                   </label>
+                   <select 
+                     required
+                     className={cn(
+                       "w-full px-6 py-4 bg-playful-50 border-4 border-transparent focus:border-vibrant-purple/10 rounded-[1.5rem] outline-none transition-all font-black appearance-none text-sm",
+                       formData.student_class === "" ? "text-gray-300" : "text-gray-900"
+                     )}
+                     value={formData.student_class}
+                     onChange={(e) => setFormData({...formData, student_class: e.target.value})}
+                   >
+                     <option value="" className="text-gray-300">KELAS</option>
+                     {CLASS_LIST.map((cls) => (
+                       <option key={cls} value={cls} className="text-gray-900">{cls}</option>
+                     ))}
+                   </select>
+                 </div>
+                 <div className="space-y-3">
+                   <label className="flex items-center gap-2 text-[10px] font-black text-gray-700 uppercase tracking-[0.2em]">
+                     <Clock size={14} className="text-vibrant-purple" />
+                     Jam Pelajaran Ke-
+                   </label>
+                   <input 
+                     type="text" required
+                     className="w-full px-6 py-4 bg-playful-50 border-4 border-transparent focus:border-vibrant-purple/10 rounded-[1.5rem] outline-none transition-all font-bold text-gray-900 placeholder:text-gray-300 text-sm"
+                     placeholder="Contoh: 3-4"
+                     value={formData.lesson_hour}
+                     onChange={(e) => setFormData({...formData, lesson_hour: e.target.value})}
+                   />
+                 </div>
+               </div>
+
+                {/* Guru Pemberi Izin */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-2 text-[10px] font-black text-gray-700 uppercase tracking-[0.2em]">
+                      <UserCheck size={14} className="text-vibrant-purple" />
+                      Wali Kelas
+                    </label>
+                    <input 
+                      type="text" required
+                      className="w-full px-6 py-4 bg-playful-50 border-4 border-transparent focus:border-vibrant-purple/10 rounded-[1.5rem] outline-none transition-all font-bold text-gray-900 placeholder:text-gray-300 text-sm"
+                      placeholder="Nama Wali Kelas"
+                      value={formData.wali_kelas}
+                      onChange={(e) => setFormData({...formData, wali_kelas: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-2 text-[10px] font-black text-gray-700 uppercase tracking-[0.2em]">
+                      <UserCheck size={14} className="text-vibrant-purple" />
+                      Guru Piket
+                    </label>
+                    <input 
+                      type="text" required
+                      className="w-full px-6 py-4 bg-playful-50 border-4 border-transparent focus:border-vibrant-purple/10 rounded-[1.5rem] outline-none transition-all font-bold text-gray-900 placeholder:text-gray-300 text-sm"
+                      placeholder="Nama Guru Piket"
+                      value={formData.piket_teacher}
+                      onChange={(e) => setFormData({...formData, piket_teacher: e.target.value})}
+                    />
+                  </div>
                 </div>
-                <div className="space-y-3">
-                  <label className="flex items-center gap-2 text-[10px] font-black text-gray-700 uppercase tracking-[0.2em]">
-                    <UserCheck size={14} className="text-vibrant-purple" />
-                    Pemberi Izin
-                  </label>
-                  <input 
-                    type="text" required
-                    className="w-full px-6 py-4 bg-playful-50 border-4 border-transparent focus:border-vibrant-purple/10 rounded-[1.5rem] outline-none transition-all font-bold text-gray-900 placeholder:text-gray-300 text-sm"
-                    placeholder="Nama Guru"
-                    value={formData.granting_teacher}
-                    onChange={(e) => setFormData({...formData, granting_teacher: e.target.value})}
-                  />
-                </div>
-              </div>
 
               {/* Jenis Izin */}
               <div className="space-y-3">
@@ -360,38 +457,46 @@ export default function StudentDispensationPage() {
                       key={item.id}
                       className="group p-4 rounded-[1.5rem] border-4 border-playful-50 hover:border-vibrant-purple/10 transition-all bg-white hover:shadow-lg"
                     >
-                      <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-4 min-w-0">
                           <div className={cn(
-                            "w-12 h-12 rounded-xl flex flex-col items-center justify-center bg-gradient-to-br shadow-md group-hover:scale-105 transition-transform",
+                            "w-12 h-12 rounded-xl flex flex-col items-center justify-center bg-gradient-to-br shadow-md group-hover:scale-105 transition-transform shrink-0",
                             item.dispensation_type === 'back_to_school' ? "from-vibrant-purple to-purple-400" : "from-vibrant-blue to-blue-400"
                           )}>
-                             <span className="text-white text-[8px] font-black mb-0.5 opacity-80">{item.student_class}</span>
-                             <GraduationCap className="text-white" size={18} />
+                             <span className="text-white text-[7px] font-black mb-0.5 opacity-80 uppercase">{item.student_class}</span>
+                             <GraduationCap className="text-white" size={16} />
                           </div>
-                          <div>
-                            <h4 className="text-sm font-black text-gray-900 group-hover:text-vibrant-purple transition-colors truncate max-w-[150px] md:max-w-none">{item.student_name}</h4>
-                            <div className="flex items-center gap-2 mt-0.5">
+                          <div className="min-w-0">
+                            <h4 className="text-xs sm:text-sm font-black text-gray-900 group-hover:text-vibrant-purple transition-colors truncate">{item.student_name}</h4>
+                            <div className="flex flex-wrap items-center gap-2 mt-0.5">
                               <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1">
                                 <Clock size={10} /> {format(new Date(item.created_at), 'HH:mm')}
                               </span>
-                              <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">•</span>
-                              <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest truncate max-w-[100px]">{item.reason}</span>
+                              <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest hidden sm:inline">•</span>
+                              <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest truncate max-w-[150px] italic">"{item.reason}"</span>
+                            </div>
+                            <div className="mt-1.5 flex flex-wrap gap-2">
+                               <span className="text-[8px] font-black text-purple-400/80 uppercase tracking-widest bg-purple-50 px-2 py-0.5 rounded border border-purple-100 flex items-center gap-1">
+                                 WK: {item.wali_kelas}
+                               </span>
+                               <span className="text-[8px] font-black text-blue-400/80 uppercase tracking-widest bg-blue-50 px-2 py-0.5 rounded border border-blue-100 flex items-center gap-1">
+                                 PKT: {item.piket_teacher}
+                               </span>
                             </div>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-3">
+                        <div className="flex sm:flex-col items-center sm:items-end justify-between gap-3 shrink-0">
                           <div className="flex flex-col items-end">
                             <span className={cn(
-                              "px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest border-2",
+                              "px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border-2",
                               getStatusBadge(item.status)
                             )}>
                               {getStatusLabel(item.status)}
                             </span>
                             {item.updated_at && item.status === 'returned' && (
                               <p className="text-[8px] font-black text-gray-300 uppercase mt-1">
-                                KEMBALI: {format(new Date(item.updated_at), 'HH:mm')}
+                                IN: {format(new Date(item.updated_at), 'HH:mm')}
                               </p>
                             )}
                           </div>
@@ -399,10 +504,9 @@ export default function StudentDispensationPage() {
                           {item.status === 'out' && (
                             <button
                               onClick={() => updateStatus(item.id, 'returned')}
-                              className="w-8 h-8 flex items-center justify-center bg-vibrant-green text-white rounded-lg shadow-lg shadow-vibrant-green/20 hover:scale-110 active:scale-95 transition-all"
-                              title="Tandai Siswa Kembali"
+                              className="px-4 py-2 flex items-center justify-center gap-2 bg-vibrant-green text-white rounded-lg shadow-lg shadow-vibrant-green/20 hover:scale-105 active:scale-95 transition-all text-[9px] font-black uppercase tracking-widest"
                             >
-                              <Check size={18} />
+                              <Check size={14} /> KEMBALI
                             </button>
                           )}
                         </div>

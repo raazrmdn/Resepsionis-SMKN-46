@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Package as PackageIcon, Plus, Search, User, Truck, CheckCircle2, Clock, MoreVertical, Bell, Sparkles } from 'lucide-react';
+import { Package as PackageIcon, Plus, Search, User, Truck, CheckCircle2, Clock, MoreVertical, Bell, Sparkles, FileDown } from 'lucide-react';
 import { supabase, type Package, type Profile } from '../lib/supabase';
 import { useAuth } from '../AuthContext';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export default function Packages() {
   const { profile } = useAuth();
@@ -31,6 +33,57 @@ export default function Packages() {
   ];
 
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+
+  const exportToPDF = () => {
+    if (packages.length === 0) {
+      setNotification({ type: 'error', message: 'Tidak ada data untuk diekspor' });
+      return;
+    }
+
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFontSize(18);
+    doc.text('SMKN 46 JAKARTA - LOG TITIPAN BARANG & SURAT', 14, 20);
+    doc.setFontSize(10);
+    doc.text(`Tanggal Cetak: ${format(new Date(), 'dd MMMM yyyy HH:mm', { locale: id })}`, 14, 28);
+    doc.text(`Dicetak oleh: ${profile?.full_name || 'Anonymous'}`, 14, 34);
+
+    const tableData = packages.map((pkg) => {
+      const recipientName = personnel.find(p => p.id === pkg.recipient_id)?.full_name || 'Manual/Umum';
+      const recipientDisplay = pkg.recipient_class ? `${recipientName} (${pkg.recipient_class})` : recipientName;
+      
+      return [
+        recipientDisplay,
+        pkg.sender_name,
+        pkg.description,
+        pkg.status === 'received' ? 'BELUM DIAMBIL' : 'SUDAH DIAMBIL',
+        format(new Date(pkg.received_at), 'dd/MM/yy HH:mm'),
+        pkg.taken_at ? format(new Date(pkg.taken_at), 'dd/MM/yy HH:mm') : '-'
+      ];
+    });
+
+    autoTable(doc, {
+      startY: 45,
+      head: [['Penerima', 'Pengirim/Kurir', 'Deskripsi/Barang', 'Status', 'Masuk', 'Keluar']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: { fillColor: [59, 130, 246], textColor: [255, 255, 255], fontStyle: 'bold' }, // Vibrant Blue
+      styles: { fontSize: 7, cellPadding: 2 },
+      columnStyles: {
+        0: { cellWidth: 35 },
+        1: { cellWidth: 30 },
+        2: { cellWidth: 60 },
+        3: { cellWidth: 25 },
+        4: { cellWidth: 20 },
+        5: { cellWidth: 20 }
+      }
+    });
+
+    const fileName = `log_barang_${format(new Date(), 'yyyyMMdd')}.pdf`;
+    doc.save(fileName);
+    setNotification({ type: 'success', message: 'Log barang berhasil diekspor ke PDF' });
+  };
 
   useEffect(() => {
     if (notification) {
@@ -157,28 +210,37 @@ export default function Packages() {
 
   return (
     <div className="space-y-10">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-4xl font-black text-gray-900 tracking-tight uppercase">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 md:gap-8">
+        <div className="max-w-xl">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-gray-900 tracking-tight uppercase leading-tight sm:leading-none">
             {profile?.role === 'teacher' ? (
               <>Notifikasi <span className="text-vibrant-blue">Barang & Surat</span></>
             ) : (
               <>Log <span className="text-vibrant-blue">Barang & Surat</span></>
             )}
           </h1>
-          <p className="text-gray-500 font-bold mt-1">
+          <p className="text-gray-500 font-bold mt-2 text-xs sm:text-sm md:text-base">
             {profile?.role === 'teacher' ? 'Daftar paket dan dokumen yang dititipkan untuk Anda' : 'Catat dan pantau paket/dokumen yang masuk ke sekolah'}
           </p>
         </div>
-        {profile?.role !== 'teacher' && (
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4 md:ml-auto">
           <button 
-            onClick={() => setShowModal(true)}
-            className="btn-primary flex items-center gap-3 text-sm shadow-vibrant-purple/20 shadow-xl"
+            onClick={exportToPDF}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-8 py-3 sm:py-4 bg-white border-2 border-vibrant-blue text-vibrant-blue rounded-xl sm:rounded-2xl font-black text-[9px] sm:text-[10px] uppercase tracking-widest hover:bg-vibrant-blue hover:text-white shadow-xl shadow-vibrant-blue/10 transition-all active:scale-95 whitespace-nowrap"
           >
-            <Plus size={20} />
-            INPUT BARANG MASUK
+            <FileDown size={18} />
+            Export PDF
           </button>
-        )}
+          {profile?.role !== 'teacher' && (
+            <button 
+              onClick={() => setShowModal(true)}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-vibrant-purple to-vibrant-pink text-white rounded-xl sm:rounded-2xl font-black text-[9px] sm:text-[10px] uppercase tracking-widest hover:scale-105 shadow-xl shadow-vibrant-purple/20 transition-all active:scale-95 whitespace-nowrap"
+            >
+              <Plus size={18} />
+              INPUT
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[150] w-full max-w-xl px-4 pointer-events-none">

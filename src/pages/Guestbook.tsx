@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Users, Plus, Search, Filter, MoreVertical, Download, UserPlus, Building2, Phone, MessageSquare, Sparkles, Clock, Eye, CheckCircle2, X } from 'lucide-react';
+import { Users, Plus, Search, Filter, MoreVertical, Download, UserPlus, Building2, Phone, MessageSquare, Sparkles, Clock, Eye, CheckCircle2, X, FileDown } from 'lucide-react';
 import { supabase, type Guest } from '../lib/supabase';
 import { useAuth } from '../AuthContext';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export default function Guestbook() {
   const { profile } = useAuth();
@@ -97,6 +99,48 @@ export default function Guestbook() {
     }
   };
 
+  const exportToPDF = () => {
+    if (filteredGuests.length === 0) {
+      setNotification({ type: 'error', message: 'Tidak ada data untuk diekspor' });
+      return;
+    }
+
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFontSize(18);
+    doc.text('SMKN 46 JAKARTA - LOG KUNJUNGAN TAMU', 14, 20);
+    doc.setFontSize(10);
+    doc.text(`Tanggal Cetak: ${format(new Date(), 'dd MMMM yyyy HH:mm', { locale: id })}`, 14, 28);
+    doc.text(`Dicetak oleh: ${profile?.full_name || 'Anonymous'}`, 14, 34);
+
+    const tableData = filteredGuests.map((guest) => [
+      guest.name,
+      guest.organization || '-',
+      guest.purpose || '-',
+      format(new Date(guest.created_at), 'dd/MM/yyyy HH:mm')
+    ]);
+
+    autoTable(doc, {
+      startY: 45,
+      head: [['Nama Tamu', 'Instansi', 'Keperluan/Pesan', 'Waktu']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: { fillColor: [236, 72, 153], textColor: [255, 255, 255], fontStyle: 'bold' }, // Vibrant Pink
+      styles: { fontSize: 8, cellPadding: 3 },
+      columnStyles: {
+        0: { cellWidth: 40 },
+        1: { cellWidth: 40 },
+        2: { cellWidth: 80 },
+        3: { cellWidth: 30 }
+      }
+    });
+
+    const fileName = `log_tamu_${format(new Date(), 'yyyyMMdd')}.pdf`;
+    doc.save(fileName);
+    setNotification({ type: 'success', message: 'Log berhasil diekspor ke PDF' });
+  };
+
   useEffect(() => {
     if (notification) {
       const timer = setTimeout(() => setNotification(null), 3000);
@@ -132,28 +176,28 @@ export default function Guestbook() {
 
   return (
     <div className="space-y-10">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-                <div className="flex items-center justify-between text-left">
-                  <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tighter uppercase leading-none">History <span className="text-vibrant-pink">Kunjungan</span></h1>
-                  {selectedGuest && (
-                    <button onClick={() => setSelectedGuest(null)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                      <X size={24} className="text-gray-400" />
-                    </button>
-                  )}
-                </div>
-                <div className="text-gray-500 font-bold mt-3 text-sm flex items-center gap-2">
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-center justify-between">
+        <div className="max-w-2xl">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-gray-900 tracking-tighter uppercase leading-tight sm:leading-none">History <span className="text-vibrant-pink">Kunjungan</span></h1>
+          <div className="text-gray-500 font-bold mt-3 text-xs sm:text-sm flex items-center gap-2">
             <div className="w-1.5 h-1.5 rounded-full bg-vibrant-pink animate-pulse"></div>
             Log aktivitas tamu dan janji temu SMKN 46 Jakarta.
           </div>
         </div>
-        <div className="flex gap-4">
+        <div className="flex flex-wrap items-center gap-3 md:gap-4 md:ml-auto">
+          <button 
+            onClick={exportToPDF}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-8 py-3 sm:py-4 bg-white border-2 border-gray-100 rounded-2xl shadow-xl hover:shadow-2xl hover:border-vibrant-pink/30 transition-all text-[9px] sm:text-[10px] font-black text-gray-700 uppercase tracking-widest active:scale-95 whitespace-nowrap"
+          >
+            <FileDown size={18} className="text-vibrant-pink" />
+            Export PDF
+          </button>
           <button 
             onClick={handleExport}
-            className="flex items-center gap-3 px-8 py-4 bg-white border-2 border-gray-100 rounded-2xl shadow-xl hover:shadow-2xl hover:border-vibrant-blue/30 transition-all text-[10px] font-black text-gray-700 uppercase tracking-widest active:scale-95 transition-all"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-8 py-3 sm:py-4 bg-white border-2 border-gray-100 rounded-2xl shadow-xl hover:shadow-2xl hover:border-vibrant-blue/30 transition-all text-[9px] sm:text-[10px] font-black text-gray-700 uppercase tracking-widest active:scale-95 whitespace-nowrap"
           >
             <Download size={18} className="text-vibrant-blue" />
-            EXPORT DATA
+            CSV
           </button>
         </div>
       </div>
@@ -183,12 +227,12 @@ export default function Guestbook() {
       </div>
 
       <div className="bg-white rounded-[3rem] shadow-2xl border border-gray-100 overflow-hidden relative">
-        <div className="p-8 border-b border-gray-100 flex flex-col md:flex-row gap-6 bg-gray-50/30">
+        <div className="p-4 sm:p-8 border-b border-gray-100 flex flex-col md:flex-row gap-4 sm:gap-6 bg-gray-50/30">
           <div className="relative flex-1">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-vibrant-purple/30 group-focus-within:text-vibrant-purple transition-colors" size={18} />
             <input 
               type="text"
-              placeholder="Cari dalam riwayat kunjungan..."
+              placeholder="Cari tamu..."
               className="w-full pl-14 pr-6 py-4 bg-white border-2 border-gray-100 rounded-2xl shadow-sm focus:border-vibrant-purple/30 focus:shadow-md outline-none transition-all font-bold text-gray-700 placeholder:text-gray-300 text-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -196,10 +240,10 @@ export default function Guestbook() {
           </div>
           <button 
             onClick={() => { setLoading(true); fetchGuests(); }}
-            className="flex items-center gap-3 px-8 py-4 bg-white border-2 border-gray-100 rounded-2xl shadow-sm hover:border-vibrant-purple/30 hover:shadow-md transition-all text-[10px] font-black text-vibrant-purple uppercase tracking-[0.2em]"
+            className="flex items-center justify-center gap-3 px-6 sm:px-8 py-4 bg-white border-2 border-gray-100 rounded-2xl shadow-sm hover:border-vibrant-purple/30 hover:shadow-md transition-all text-[9px] sm:text-[10px] font-black text-vibrant-purple uppercase tracking-[0.2em]"
           >
             <Clock size={16} className={cn(loading && "animate-spin")} />
-            REFRESH LOG
+            REFRESH
           </button>
         </div>
 
@@ -319,23 +363,23 @@ export default function Guestbook() {
               </div>
 
               <div className="p-10 space-y-8">
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="p-6 bg-gray-50 rounded-3xl border-2 border-slate-100">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Tanggal</p>
-                    <p className="font-bold text-gray-900">{format(new Date(selectedGuest.created_at), 'EEEE, dd MMMM yyyy', { locale: id })}</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="p-4 sm:p-6 bg-gray-50 rounded-2xl sm:rounded-3xl border-2 border-slate-100">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 sm:mb-2">Tanggal</p>
+                    <p className="text-sm sm:text-base font-bold text-gray-900">{format(new Date(selectedGuest.created_at), 'EEEE, dd MMMM yyyy', { locale: id })}</p>
                   </div>
-                  <div className="p-6 bg-gray-50 rounded-3xl border-2 border-slate-100">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Waktu</p>
-                    <p className="font-bold text-gray-900">{format(new Date(selectedGuest.created_at), 'HH:mm', { locale: id })} WIB</p>
+                  <div className="p-4 sm:p-6 bg-gray-50 rounded-2xl sm:rounded-3xl border-2 border-slate-100">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 sm:mb-2">Waktu</p>
+                    <p className="text-sm sm:text-base font-bold text-gray-900">{format(new Date(selectedGuest.created_at), 'HH:mm', { locale: id })} WIB</p>
                   </div>
                 </div>
 
-                <div className="p-8 bg-blue-50/50 rounded-3xl border-2 border-blue-100 relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
-                    <MessageSquare size={100} />
+                <div className="p-6 sm:p-8 bg-blue-50/50 rounded-2xl sm:rounded-3xl border-2 border-blue-100 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform">
+                    <MessageSquare size={80} />
                   </div>
-                  <p className="text-[10px] font-black text-vibrant-blue uppercase tracking-widest mb-3">Keperluan / Pesan</p>
-                  <p className="text-gray-700 font-bold leading-relaxed relative z-10 whitespace-pre-wrap">
+                  <p className="text-[10px] font-black text-vibrant-blue uppercase tracking-widest mb-2 sm:mb-3">Keperluan / Pesan</p>
+                  <p className="text-sm sm:text-base text-gray-700 font-bold leading-relaxed relative z-10 whitespace-pre-wrap">
                     {selectedGuest.purpose}
                   </p>
                 </div>

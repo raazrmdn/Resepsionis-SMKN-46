@@ -9,13 +9,16 @@ import {
   MessageSquare,
   Flag,
   Filter,
-  Plus
+  Plus,
+  FileDown
 } from 'lucide-react';
 import { supabase, type SystemReport } from '../lib/supabase';
 import { useAuth } from '../AuthContext';
 import { cn } from '../lib/utils';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export default function Reports() {
   const { profile } = useAuth();
@@ -115,6 +118,46 @@ export default function Reports() {
     }
   }
 
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFontSize(18);
+    doc.text('SMKN 46 JAKARTA - LAPORAN KENDALA SISTEM', 14, 20);
+    doc.setFontSize(10);
+    doc.text(`Tanggal Cetak: ${format(new Date(), 'dd MMMM yyyy HH:mm', { locale: id })}`, 14, 28);
+    doc.text(`Dicetak oleh: ${profile?.full_name || 'Anonymous'}`, 14, 34);
+
+    const tableData = reports.map((report) => [
+      report.title,
+      report.description,
+      report.priority.toUpperCase(),
+      report.status === 'resolved' ? 'SELESAI' : report.status.replace('_', ' ').toUpperCase(),
+      (report as any).profiles?.full_name || 'Anonymous',
+      format(new Date(report.created_at), 'dd/MM/yyyy HH:mm')
+    ]);
+
+    autoTable(doc, {
+      startY: 45,
+      head: [['Subjek', 'Deskripsi', 'Prioritas', 'Status', 'Pelapor', 'Waktu']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: { fillColor: [124, 58, 237], textColor: [255, 255, 255], fontStyle: 'bold' },
+      styles: { fontSize: 8, cellPadding: 3 },
+      columnStyles: {
+        0: { cellWidth: 40 },
+        1: { cellWidth: 50 },
+        2: { cellWidth: 20 },
+        3: { cellWidth: 25 },
+        4: { cellWidth: 30 },
+        5: { cellWidth: 25 }
+      }
+    });
+
+    const fileName = `laporan_kendala_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+    doc.save(fileName);
+  };
+
   return (
     <div className="space-y-10">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
@@ -124,12 +167,20 @@ export default function Reports() {
           </h1>
           <p className="text-gray-500 font-bold mt-1">Laporkan kendala sistem atau berikan feedback untuk pengembangan aplikasi.</p>
         </div>
-        <button 
-          onClick={() => setShowForm(true)}
-          className="flex items-center gap-3 px-8 py-5 bg-vibrant-purple text-white rounded-[2rem] font-black text-xs uppercase tracking-widest hover:bg-vibrant-purple/90 shadow-xl shadow-vibrant-purple/20 transition-all active:scale-95"
-        >
-          <Plus size={20} /> Buat Laporan Baru
-        </button>
+        <div className="flex flex-wrap gap-4 md:ml-auto">
+          <button 
+            onClick={exportToPDF}
+            className="flex items-center gap-3 px-8 py-5 bg-white border-4 border-vibrant-purple text-vibrant-purple rounded-[2rem] font-black text-xs uppercase tracking-widest hover:bg-vibrant-purple hover:text-white shadow-xl shadow-vibrant-purple/10 transition-all active:scale-95 whitespace-nowrap"
+          >
+            <FileDown size={20} /> Export PDF
+          </button>
+          <button 
+            onClick={() => setShowForm(true)}
+            className="flex items-center gap-3 px-8 py-5 bg-vibrant-purple text-white rounded-[2rem] font-black text-xs uppercase tracking-widest hover:bg-vibrant-purple/90 shadow-xl shadow-vibrant-purple/20 transition-all active:scale-95 whitespace-nowrap"
+          >
+            <Plus size={20} /> Buat Laporan Baru
+          </button>
+        </div>
       </header>
 
       <AnimatePresence>
